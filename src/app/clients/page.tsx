@@ -41,9 +41,10 @@ export default function ClientsPage() {
     try {
       const res = await fetch(`/api/prospects?isClient=true&search=${encodeURIComponent(search)}`);
       const data = await res.json();
-      setClients(data || []);
+      setClients(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to load clients", e);
+      setClients([]);
     } finally {
       setLoading(false);
     }
@@ -57,10 +58,12 @@ export default function ClientsPage() {
     setTechStatuses((prev) => ({ ...prev, [clientId]: status }));
   };
 
+  const safeClients = Array.isArray(clients) ? clients : [];
+
   const filteredClients =
     activeTab === "tech"
-      ? clients.filter((c) => (techStatuses[c.id] || "À contacter par Technicien") !== "Projet Livré au Client")
-      : clients;
+      ? safeClients.filter((c) => (techStatuses[c.id] || "À contacter par Technicien") !== "Projet Livré au Client")
+      : safeClients;
 
   return (
     <div className="space-y-6">
@@ -99,7 +102,7 @@ export default function ClientsPage() {
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            Tous les Clients Signés ({clients.length})
+            Tous les Clients Signés ({safeClients.length})
           </button>
           <button
             onClick={() => setActiveTab("tech")}
