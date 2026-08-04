@@ -1,0 +1,150 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         String        @default("COMMERCIAL") // SUPER_ADMIN, ADMIN, COMMERCIAL
+  avatar       String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  assignedProspects Prospect[]    @relation("AssignedProspects")
+  createdProspects  Prospect[]    @relation("CreatedProspects")
+  callLogs          CallLog[]
+  appointments      Appointment[]
+  quotes            Quote[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+}
+
+model Prospect {
+  id               String        @id @default(uuid())
+  googlePlaceId    String?       @unique
+  name             String
+  category         String
+  phone            String
+  phoneSecondary   String?
+  email            String?
+  address          String
+  city             String
+  region           String
+  website          String?
+  decisionMaker    String?
+  facebook         String?
+  linkedin         String?
+  notes            String?
+  status           String        @default("Nouveau") // Nouveau, A_CONTACTER, CONTACTE, EN_DISCUSSION, INTERESSE, DEVIS_ENVOYE, A_RAPPELER, RDV_FIXE, CLIENT, REFUSE, INJOIGNABLE
+  priority         String        @default("Moyenne") // Faible, Moyenne, Haute, Urgente
+  rating           Float?
+  userRatingsTotal Int?
+  lat              Float?
+  lng              Float?
+  isClient         Boolean       @default(false)
+  
+  assignedToId     String?
+  assignedTo       User?         @relation("AssignedProspects", fields: [assignedToId], references: [id])
+  
+  createdById      String?
+  createdBy        User?         @relation("CreatedProspects", fields: [createdById], references: [id])
+  
+  importedAt       DateTime      @default(now())
+  firstContactAt   DateTime?
+  convertedAt      DateTime?
+  updatedAt        DateTime      @updatedAt
+
+  callLogs         CallLog[]
+  appointments     Appointment[]
+  quotes           Quote[]
+}
+
+model CallLog {
+  id          String   @id @default(uuid())
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  callDate    DateTime @default(now())
+  duration    Int      @default(0) // en secondes
+  result      String   // Repondu, Occupe, Pas_de_reponse, Numero_invalide, Interesse, Pas_interesse
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  prospectId      String
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  userId          String
+  user        User     @relation(fields: [userId], references: [id])
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  type            String   @default("Rendez-vous") // Rappel, Rendez-vous
+  status          String   @default("Programme")   // Programme, Effectue, Annule, En_retard
+  reminderMinutes Int      @default(15)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Quote {
+  id          String   @id @default(uuid())
+  quoteNumber String   @unique
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  totalAmount Float
+  status      String   @default("Brouillon") // Brouillon, Envoye, Accepte, Refuse
+  validUntil  DateTime
+  itemsJson   String   // Stockage JSON des lignes de devis
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   // PROSPECT, APPOINTMENT, REMINDER, CLIENT, OVERDUE
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  code   String  @unique
+  active Boolean @default(true)
+}
+
+model City {
+  id         String @id @default(uuid())
+  name       String @unique
+  region     String
+  postalCode String?
+}

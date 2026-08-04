@@ -1,0 +1,64 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
+    const quotes = await prisma.quote.findMany({
+      include: {
+        prospect: { select: { id: true, name: true, phone: true, email: true, city: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(quotes);
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur lors de la récupération des devis" }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+    const body = await req.json();
+    const { prospectId, items, totalAmount, validDays } = body;
+
+    const count = await prisma.quote.count();
+    const quoteNumber = `DEV-${new Date().getFullYear()}-${(count + 1).toString().padStart(3, "0")}`;
+
+    const quote = await prisma.quote.create({
+      data: {
+        quoteNumber,
+        prospectId,
+        createdById: userId,
+        totalAmount: parseFloat(totalAmount),
+        status: "Envoye",
+        validUntil: new Date(Date.now() + (parseInt(validDays || "15") * 24 * 60 * 60 * 1000)),
+        itemsJson: JSON.stringify(items),
+      },
+    });
+
+    // Update prospect status
+    await prisma.prospect.update({
+      where: { id: prospectId },
+      data: { status: "Devis envoyé" },
+    });
+
+    return NextResponse.json(quote);
+  } catch (error) {
+    console.error("POST /api/quotes error:", error);
+    return NextResponse.json({ error: "Erreur lors de la création du devis" }, { status: 500 });
+  }
+}
