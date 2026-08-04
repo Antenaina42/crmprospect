@@ -10,17 +10,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const quotes = await prisma.quote.findMany({
-      include: {
-        prospect: { select: { id: true, name: true, phone: true, email: true, city: true } },
-        createdBy: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    let quotes: any[] = [];
+    try {
+      quotes = await prisma.quote.findMany({
+        include: {
+          prospect: { select: { id: true, name: true, phone: true, email: true, city: true } },
+          createdBy: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (dbErr) {
+      console.error("Database query error in GET /api/quotes:", dbErr);
+      quotes = [];
+    }
 
-    return NextResponse.json(quotes);
+    return NextResponse.json(quotes || []);
   } catch (error) {
-    return NextResponse.json({ error: "Erreur lors de la récupération des devis" }, { status: 500 });
+    console.error("GET /api/quotes route error:", error);
+    return NextResponse.json([]);
   }
 }
 
@@ -35,7 +42,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { prospectId, items, totalAmount, validDays } = body;
 
-    const count = await prisma.quote.count();
+    const count = await prisma.quote.count().catch(() => 0);
     const quoteNumber = `DEV-${new Date().getFullYear()}-${(count + 1).toString().padStart(3, "0")}`;
 
     const quote = await prisma.quote.create({
@@ -50,15 +57,18 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update prospect status
-    await prisma.prospect.update({
-      where: { id: prospectId },
-      data: { status: "Devis envoyé" },
-    });
+    try {
+      await prisma.prospect.update({
+        where: { id: prospectId },
+        data: { status: "Devis envoyé" },
+      });
+    } catch (e) {
+      // Optional status update
+    }
 
     return NextResponse.json(quote);
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/quotes error:", error);
-    return NextResponse.json({ error: "Erreur lors de la création du devis" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Erreur lors de la création du devis" }, { status: 500 });
   }
 }

@@ -10,17 +10,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const appointments = await prisma.appointment.findMany({
-      include: {
-        prospect: { select: { id: true, name: true, phone: true, city: true } },
-        user: { select: { id: true, name: true } },
-      },
-      orderBy: { startTime: "asc" },
-    });
+    let appointments: any[] = [];
+    try {
+      appointments = await prisma.appointment.findMany({
+        include: {
+          prospect: { select: { id: true, name: true, phone: true, city: true } },
+          user: { select: { id: true, name: true } },
+        },
+        orderBy: { startTime: "asc" },
+      });
+    } catch (dbErr) {
+      console.error("Database error in GET /api/appointments:", dbErr);
+      appointments = [];
+    }
 
-    return NextResponse.json(appointments);
+    return NextResponse.json(appointments || []);
   } catch (error) {
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("GET /api/appointments route error:", error);
+    return NextResponse.json([]);
   }
 }
 
@@ -48,17 +55,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update prospect status to RDV_fixe
     if (type === "Rendez-vous") {
-      await prisma.prospect.update({
-        where: { id: prospectId },
-        data: { status: "Rendez-vous fixé" },
-      });
+      try {
+        await prisma.prospect.update({
+          where: { id: prospectId },
+          data: { status: "Rendez-vous fixé" },
+        });
+      } catch (e) {
+        // Optional status update
+      }
     }
 
     return NextResponse.json(appointment);
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/appointments error:", error);
-    return NextResponse.json({ error: "Erreur lors de la création du rendez-vous" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Erreur lors de la création du rendez-vous" }, { status: 500 });
   }
 }
