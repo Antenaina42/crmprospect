@@ -10,6 +10,13 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
+// Automatic Hostinger MySQL fallback if DATABASE_URL is not provided by server environment
+const isProductionServer = process.env.NODE_ENV === 'production' || process.env.HOSTINGER || process.env.USER === 'u697568943';
+
+if (!process.env.DATABASE_URL && isProductionServer) {
+  process.env.DATABASE_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
+}
+
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
