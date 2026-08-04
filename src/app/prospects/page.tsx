@@ -70,9 +70,10 @@ function ProspectsContent() {
 
       const res = await fetch(`/api/prospects?${queryParams}`);
       const data = await res.json();
-      setProspects(data || []);
+      setProspects(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("Failed to load prospects", e);
+      setProspects([]);
     } finally {
       setLoading(false);
     }
@@ -86,6 +87,8 @@ function ProspectsContent() {
     e.preventDefault();
     fetchProspects();
   };
+
+  const safeProspectsList = Array.isArray(prospects) ? prospects : [];
 
   return (
     <div className="space-y-6">
@@ -190,7 +193,7 @@ function ProspectsContent() {
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-6 h-6 text-brand-600 animate-spin" />
           </div>
-        ) : prospects.length === 0 ? (
+        ) : safeProspectsList.length === 0 ? (
           <div className="text-center py-16 p-6">
             <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
             <p className="text-sm font-bold text-slate-800">Aucun prospect trouvé</p>
@@ -211,7 +214,7 @@ function ProspectsContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-800">
-                {prospects.map((prospect) => (
+                {safeProspectsList.map((prospect) => (
                   <tr
                     key={prospect.id}
                     className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
