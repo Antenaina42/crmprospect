@@ -1,4 +1,14 @@
 import { PrismaClient } from '@prisma/client';
+import path from 'path';
+
+// Ensure .env is explicitly loaded in production
+if (!process.env.DATABASE_URL) {
+  try {
+    require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
+  } catch (e) {
+    // Dotenv fallback
+  }
+}
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 

@@ -42,10 +42,12 @@ export default function ParametresPage() {
     try {
       const res = await fetch("/api/users");
       const data = await res.json();
-      setUsers(data.users || []);
-      setAuditLogs(data.auditLogs || []);
+      setUsers(Array.isArray(data?.users) ? data.users : []);
+      setAuditLogs(Array.isArray(data?.auditLogs) ? data.auditLogs : []);
     } catch (e) {
       console.error(e);
+      setUsers([]);
+      setAuditLogs([]);
     } finally {
       setLoading(false);
     }
@@ -89,6 +91,9 @@ export default function ParametresPage() {
     }
   };
 
+  const safeUsers = Array.isArray(users) ? users : [];
+  const safeAuditLogs = Array.isArray(auditLogs) ? auditLogs : [];
+
   return (
     <div className="space-y-6">
       {/* Top Banner Header */}
@@ -128,7 +133,7 @@ export default function ParametresPage() {
               <Users className="w-4 h-4 text-brand-600" />
               <span>Gestion des Utilisateurs & Rôles</span>
             </h3>
-            <span className="text-xs text-slate-400 font-medium">{users.length} comptes actifs</span>
+            <span className="text-xs text-slate-400 font-medium">{safeUsers.length} comptes actifs</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -142,35 +147,43 @@ export default function ParametresPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-800">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/80">
-                    <td className="py-3 px-3">
-                      <p className="font-bold text-slate-900">{u.name}</p>
-                      <p className="text-[11px] text-slate-400">{u.email}</p>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          u.role === "SUPER_ADMIN"
-                            ? "bg-purple-100 text-purple-700"
-                            : u.role === "ADMIN"
-                            ? "bg-brand-100 text-brand-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-medium text-slate-600">
-                      {u._count?.assignedProspects || 0} prospects
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                        Actif
-                      </span>
+                {safeUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-xs text-slate-400">
+                      Aucun utilisateur trouvé ou chargement...
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  safeUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50/80">
+                      <td className="py-3 px-3">
+                        <p className="font-bold text-slate-900">{u.name}</p>
+                        <p className="text-[11px] text-slate-400">{u.email}</p>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            u.role === "SUPER_ADMIN"
+                              ? "bg-purple-100 text-purple-700"
+                              : u.role === "ADMIN"
+                              ? "bg-brand-100 text-brand-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 font-medium text-slate-600">
+                        {u._count?.assignedProspects || 0} prospects
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                          Actif
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -256,7 +269,7 @@ export default function ParametresPage() {
         </h3>
 
         <div className="space-y-2">
-          {auditLogs.slice(0, 5).map((log) => (
+          {safeAuditLogs.slice(0, 5).map((log) => (
             <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
               <div>
                 <span className="font-bold text-slate-900">{log.action}</span>

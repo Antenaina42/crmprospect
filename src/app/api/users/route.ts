@@ -9,28 +9,36 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        active: true,
-        createdAt: true,
-        _count: { select: { assignedProspects: true, callLogs: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    let users: any[] = [];
+    let auditLogs: any[] = [];
 
-    const auditLogs = await prisma.auditLog.findMany({
-      take: 20,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true, email: true } } },
-    });
+    try {
+      users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          active: true,
+          createdAt: true,
+          _count: { select: { assignedProspects: true, callLogs: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
-    return NextResponse.json({ users, auditLogs });
+      auditLogs = await prisma.auditLog.findMany({
+        take: 20,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true, email: true } } },
+      });
+    } catch (dbErr) {
+      console.error("Database query error in GET /api/users:", dbErr);
+    }
+
+    return NextResponse.json({ users: users || [], auditLogs: auditLogs || [] });
   } catch (error) {
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("GET /api/users route error:", error);
+    return NextResponse.json({ users: [], auditLogs: [] });
   }
 }
 
@@ -43,6 +51,10 @@ export async function POST(req: Request) {
     }
 
     const { name, email, password, role } = await req.json();
+
+    if (!email || !name) {
+      return NextResponse.json({ error: "Nom et email requis" }, { status: 400 });
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -61,7 +73,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(newUser);
-  } catch (error) {
-    return NextResponse.json({ error: "Erreur lors de la création de l'utilisateur" }, { status: 500 });
+  } catch (error: any) {
+    console.error("POST /api/users error:", error);
+    return NextResponse.json({ error: error?.message || "Erreur lors de la création de l'utilisateur" }, { status: 500 });
   }
 }
