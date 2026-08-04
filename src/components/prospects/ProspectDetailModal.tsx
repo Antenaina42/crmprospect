@@ -190,8 +190,12 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex justify-end">
+    <div
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex justify-end"
+      onClick={onClose}
+    >
       <motion.div
+        onClick={(e) => e.stopPropagation()}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}

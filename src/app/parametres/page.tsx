@@ -283,10 +283,16 @@ export default function ParametresPage() {
         </div>
       </div>
 
-      {/* Add User Modal */}
+      {/* Add User Modal with Backdrop Click Close */}
       {showAddUserModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-modal">
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={() => setShowAddUserModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-base font-bold text-slate-900 mb-4">Créer un Compte Utilisateur</h3>
 
             <form onSubmit={handleAddUser} className="space-y-3 text-xs">
