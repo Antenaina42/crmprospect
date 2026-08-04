@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Users,
@@ -21,7 +21,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { ProspectDetailModal } from "@/components/prospects/ProspectDetailModal";
-import { motion, AnimatePresence } from "framer-motion";
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
   Nouveau: "bg-blue-50 text-blue-700 border-blue-200",
@@ -44,7 +43,7 @@ const PRIORITY_BADGE_COLORS: Record<string, string> = {
   Urgente: "text-rose-700 bg-rose-50 font-bold animate-pulse",
 };
 
-export default function ProspectsPage() {
+function ProspectsContent() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
 
@@ -288,5 +287,19 @@ export default function ProspectsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ProspectsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="w-8 h-8 text-brand-600 animate-spin" />
+        </div>
+      }
+    >
+      <ProspectsContent />
+    </Suspense>
   );
 }
