@@ -8,18 +8,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  COMMERCIAL
-}
-
 model User {
   id                String        @id @default(cuid())
   name              String
   email             String        @unique
   passwordHash      String
-  role              Role          @default(COMMERCIAL)
+  role              String        @default("COMMERCIAL")
   avatar            String?
   active            Boolean       @default(true)
   createdAt         DateTime      @default(now())
@@ -49,8 +43,8 @@ model Category {
 }
 
 model Prospect {
-  id               String   @id @default(cuid())
-  googlePlaceId    String?  @unique
+  id               String    @id @default(cuid())
+  googlePlaceId    String?   @unique
   name             String
   category         String
   phone            String
@@ -58,27 +52,28 @@ model Prospect {
   email            String?
   address          String
   city             String
-  region           String   @default("Analamanga")
+  region           String    @default("Analamanga")
   website          String?
   decisionMaker    String?
   facebook         String?
   linkedin         String?
   notes            String?
-  status           String   @default("Nouveau")
-  priority         String   @default("Moyenne")
-  isClient         Boolean  @default(false)
+  status           String    @default("Nouveau")
+  priority         String    @default("Moyenne")
+  isClient         Boolean   @default(false)
+  firstContactAt   DateTime?
   convertedAt      DateTime?
   rating           Float?
   userRatingsTotal Int?
   lat              Float?
   lng              Float?
-  importedAt       DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  importedAt       DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   assignedToId     String?
-  assignedTo       User?    @relation("AssignedCommercial", fields: [assignedToId], references: [id])
+  assignedTo       User?     @relation("AssignedCommercial", fields: [assignedToId], references: [id])
   createdById      String?
-  createdBy        User?    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdBy        User?     @relation("CreatedBy", fields: [createdById], references: [id])
 
   callLogs         CallLog[]
   appointments     Appointment[]
