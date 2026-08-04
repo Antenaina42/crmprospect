@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Building2, Lock, Mail, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building2, Lock, Mail, ArrowRight, CheckCircle2, AlertCircle, Database, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedSuccess, setSeedSuccess] = useState("");
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -29,7 +31,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Email ou mot de passe incorrect");
+        setError("Email ou mot de passe incorrect. Si c'est votre première connexion, cliquez sur 'Initialiser la base de données' ci-dessous.");
       } else {
         router.push("/dashboard");
         router.refresh();
@@ -38,6 +40,27 @@ export default function LoginPage() {
       setError("Une erreur est survenue lors de la connexion");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeedDatabase = async () => {
+    setSeeding(true);
+    setSeedSuccess("");
+    setError("");
+    try {
+      const res = await fetch("/api/seed");
+      const data = await res.json();
+      if (data.success) {
+        setSeedSuccess("Base de données initialisée avec succès ! Utilisez superadmin@prospectmada.mg ou rakoto@prospectmada.mg avec le mot de passe admin123.");
+        setEmail("superadmin@prospectmada.mg");
+        setPassword("admin123");
+      } else {
+        setError(data.error || "Échec de l'initialisation de la base de données.");
+      }
+    } catch (err) {
+      setError("Erreur de connexion avec l'API d'initialisation.");
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -74,6 +97,13 @@ export default function LoginPage() {
             <h2 className="text-lg font-semibold text-slate-900">Espace de Connexion</h2>
             <p className="text-xs text-slate-500">Accédez à votre compte commercial sécurisé</p>
           </div>
+
+          {seedSuccess && (
+            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{seedSuccess}</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
@@ -133,6 +163,23 @@ export default function LoginPage() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* Database Setup Helper Link for Online Hostinger */}
+          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+            <button
+              type="button"
+              onClick={handleSeedDatabase}
+              disabled={seeding}
+              className="text-xs text-slate-500 hover:text-brand-600 font-semibold flex items-center justify-center gap-1.5 mx-auto transition-colors"
+            >
+              {seeding ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Database className="w-3.5 h-3.5 text-brand-600" />
+              )}
+              <span>{seeding ? "Initialisation de la base..." : "Premier déploiement ? Alimenter la base de données"}</span>
+            </button>
+          </div>
         </motion.div>
       </div>
 
