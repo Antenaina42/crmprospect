@@ -1,35 +1,56 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
+}
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  COMMERCIAL
 }
 
 model User {
-  id           String        @id @default(uuid())
-  name         String
-  email        String        @unique
-  passwordHash String
-  role         String        @default("COMMERCIAL") // SUPER_ADMIN, ADMIN, COMMERCIAL
-  avatar       String?
-  active       Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  name              String
+  email             String        @unique
+  passwordHash      String
+  role              Role          @default(COMMERCIAL)
+  avatar            String?
+  active            Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  assignedProspects Prospect[]    @relation("AssignedProspects")
-  createdProspects  Prospect[]    @relation("CreatedProspects")
+  assignedProspects Prospect[]    @relation("AssignedCommercial")
+  createdProspects  Prospect[]    @relation("CreatedBy")
   callLogs          CallLog[]
   appointments      Appointment[]
   quotes            Quote[]
   auditLogs         AuditLog[]
-  notifications     Notification[]
+}
+
+model City {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  region     String
+  postalCode String?
+  createdAt  DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
 }
 
 model Prospect {
-  id               String        @id @default(uuid())
-  googlePlaceId    String?       @unique
+  id               String   @id @default(cuid())
+  googlePlaceId    String?  @unique
   name             String
   category         String
   phone            String
@@ -37,30 +58,27 @@ model Prospect {
   email            String?
   address          String
   city             String
-  region           String
+  region           String   @default("Analamanga")
   website          String?
   decisionMaker    String?
   facebook         String?
   linkedin         String?
   notes            String?
-  status           String        @default("Nouveau") // Nouveau, A_CONTACTER, CONTACTE, EN_DISCUSSION, INTERESSE, DEVIS_ENVOYE, A_RAPPELER, RDV_FIXE, CLIENT, REFUSE, INJOIGNABLE
-  priority         String        @default("Moyenne") // Faible, Moyenne, Haute, Urgente
+  status           String   @default("Nouveau")
+  priority         String   @default("Moyenne")
+  isClient         Boolean  @default(false)
+  convertedAt      DateTime?
   rating           Float?
   userRatingsTotal Int?
   lat              Float?
   lng              Float?
-  isClient         Boolean       @default(false)
-  
+  importedAt       DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   assignedToId     String?
-  assignedTo       User?         @relation("AssignedProspects", fields: [assignedToId], references: [id])
-  
+  assignedTo       User?    @relation("AssignedCommercial", fields: [assignedToId], references: [id])
   createdById      String?
-  createdBy        User?         @relation("CreatedProspects", fields: [createdById], references: [id])
-  
-  importedAt       DateTime      @default(now())
-  firstContactAt   DateTime?
-  convertedAt      DateTime?
-  updatedAt        DateTime      @updatedAt
+  createdBy        User?    @relation("CreatedBy", fields: [createdById], references: [id])
 
   callLogs         CallLog[]
   appointments     Appointment[]
@@ -68,83 +86,66 @@ model Prospect {
 }
 
 model CallLog {
-  id          String   @id @default(uuid())
-  prospectId  String
-  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  callDate    DateTime @default(now())
-  duration    Int      @default(0) // en secondes
-  result      String   // Repondu, Occupe, Pas_de_reponse, Numero_invalide, Interesse, Pas_interesse
-  notes       String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+
+  callDate   DateTime @default(now())
+  duration   Int      @default(0)
+  result     String
+  notes      String?
+  createdAt  DateTime @default(now())
 }
 
 model Appointment {
-  id              String   @id @default(uuid())
+  id              String   @id @default(cuid())
   prospectId      String
-  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospect        Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   userId          String
-  user        User     @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
   title           String
   description     String?
   startTime       DateTime
   endTime         DateTime
-  type            String   @default("Rendez-vous") // Rappel, Rendez-vous
-  status          String   @default("Programme")   // Programme, Effectue, Annule, En_retard
+  status          String   @default("Planifié")
+  type            String   @default("Rendez-vous")
   reminderMinutes Int      @default(15)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }
 
 model Quote {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   quoteNumber String   @unique
   prospectId  String
   prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id])
+
   totalAmount Float
-  status      String   @default("Brouillon") // Brouillon, Envoye, Accepte, Refuse
+  status      String   @default("Brouillon")
   validUntil  DateTime
-  itemsJson   String   // Stockage JSON des lignes de devis
+  itemsJson   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   action    String
   details   String?
-  ipAddress String?
-  userAgent String?
   createdAt DateTime @default(now())
 }
 
 model Notification {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
-  type      String   // PROSPECT, APPOINTMENT, REMINDER, CLIENT, OVERDUE
   read      Boolean  @default(false)
-  link      String?
   createdAt DateTime @default(now())
-}
-
-model Category {
-  id     String  @id @default(uuid())
-  name   String  @unique
-  code   String  @unique
-  active Boolean @default(true)
-}
-
-model City {
-  id         String @id @default(uuid())
-  name       String @unique
-  region     String
-  postalCode String?
 }
