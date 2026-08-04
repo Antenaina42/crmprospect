@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   PhoneCall,
   MessageSquareCode,
@@ -15,123 +16,131 @@ import {
   CheckCircle2,
   HelpCircle,
   Zap,
+  UserCheck,
+  Flame,
+  Award,
+  Clock,
+  Send,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const SECTOR_SCRIPTS: Record<
-  string,
-  {
-    title: string;
-    hook: string;
-    valueProp: string;
-    pitch: string;
-    closing: string;
-  }
-> = {
-  BTP: {
-    title: "Entreprises BTP & Construction",
-    hook: "Manao ahoana tompoko, [Nom Responsable] ve izao? Rakoto avy amin'ny agence M-IT Level Up (m-itlevelup.com) aho.",
-    valueProp: "Fampiroboroboana ny chantiers, demande de devis en ligne ary catalogue des réalisations BTP.",
-    pitch: `Ny antony hianggilanay anao dia mahita izahay fa tena mandeha tsara ny activité-nao amin'ny BTP sy Construction ao [Ville]. 
+export default function ScriptsVentePage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Rakoto Jean";
 
-Maro amin'ireo clients mpanao chantier lehibe ankehitriny no mikaroka entreprise BTP mampiasa Google. Ao amin'ny M-IT Level Up izahay dia manamboatra Application Web & Site Professionnel manokana ho an'ny BTP:
-- Kataloga amin'ny sary sy vidéos ny chantiers efa vitanao.
-- Formulaire ahafahan'ny client mangataka DEVIS en ligne mampiditra plan sy budget.
-- Pejy mivoaka voalohany amin'ny Google search amin'ny teny hoe "BTP Madagascar".`,
-    closing: `Manomboka amin'ny 1.500.000 Ar fotsiny ny tarify base-n'ny Application Web ho an'ny BTP. 
+  const [selectedSector, setSelectedSector] = useState("BTP");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
-Rahoviana ianao no malalaka amin'ity herinandro ity hanaovanay démonstration fohy 15 minitra amin'ny visioconférence na mihaona mampiseho ohatra efa vita?`,
-  },
-  HOTEL: {
-    title: "Hôtels & Restaurants",
-    hook: "Salama tompoko, amin'ny resaka gestion d'hébergement sy restauration ao amin'ny [Nom Etablissement] ihany izao...",
-    valueProp: "Réservation en ligne direct sans commission + Gestion des chambres.",
-    pitch: `Ao amin'ny M-IT Level Up (m-itlevelup.com) izahay dia manampy ireo Hôtels sy Restaurants any Madagascar mba hahazo Client direct tsy mandalo commission amin'ireo plateforme hafa.
+  const SECTOR_SCRIPTS: Record<
+    string,
+    {
+      title: string;
+      hook: string;
+      valueProp: string;
+      pitch: string;
+      closing: string;
+    }
+  > = {
+    BTP: {
+      title: "Entreprises BTP & Construction",
+      hook: `Manao ahoana tompoko, [Nom Responsable] ve izao? ${userName} avy amin'ny agence digital M-IT Level Up (m-itlevelup.com) aho.`,
+      valueProp: "Fampiroboroboana ny chantiers, demande de devis en ligne automatique ary visibilité Google N°1.",
+      pitch: `Ny antony hianggilanay anao mivantana androany dia mahita izahay fa mitombo tsara ny chantiers ataonareo ao [Ville]. 
+
+Maro amin'ireo promotioma lehibe sy clients mpanao chantier ankehitriny no mikaroka entreprise BTP mampiasa Google. Ao amin'ny M-IT Level Up izahay dia manamboatra Application Web & Site Professionnel manokana ho an'ny BTP:
+1. Kataloga amboarina amin'ny sary sy vidéos HD amin'ireo chantiers efa vitanao (pour rassurer le client).
+2. Formulaire demande de DEVIS en ligne ahafahan'ny client mampiditra plan sy budget mivantana.
+3. Référencement Google SEO mba mivoaka voalohany ianao rehefa misy mikaroka BTP ao [Ville].`,
+      closing: `Ny solusy novolavolainay dia misy OFFRE SPÉCIALE manomboka amin'ny 1.500.000 Ar fotsiny (misy facilté de paiement en 2 ou 3 fois). 
+
+Rahoviana ianao no malalaka androany na rahampitso hanaovanay démonstration fohy 10 minitra amin'ny visioconférence na mihaona mampiseho ohatra efa vita?`,
+    },
+    HOTEL: {
+      title: "Hôtels & Restaurants",
+      hook: `Salama tompoko, amin'ny resaka gestion d'hébergement sy restauration ao amin'ny [Nom Etablissement] ihany izao... ${userName} avy amin'ny M-IT Level Up aho.`,
+      valueProp: "Réservation en ligne direct sans commission + Gestion automatique des chambres & tables.",
+      pitch: `Ao amin'ny M-IT Level Up (m-itlevelup.com) izahay dia manampy ireo Hôtels sy Restaurants any Madagascar mba hahazo Client direct TSY MANDALO COMMISSION amin'ireo plateforme hafa.
 
 Amin'ny alalan'ny Application Web amboarinay:
-- Afaka manao Réservation chambre na meza mivantana amin'ny site ny clients.
-- Azonao jerena amin'ny Téléphone sy Ordinateur ny planning reservation sy disponible.
-- Misy intégration sary sy tarif mazava.`,
-    closing: `Misy offre spéciale ho an'ny Hôtels & Restaurants manomboka amin'ny 1.500.000 Ar fotsiny. 
+- Ny client-nao (etranjey sy Gasy) dia afaka manao Réservation chambre na meza mivantana amin'ny site 24/7.
+- Azonao jerena amin'ny Téléphone-nao ny planning reservation sy ny disponible miaraka amin'ny alerte instantanée.
+- Integration sary HD, tarifs mazava ary formulaire rapide.`,
+      closing: `Offre clé en main manomboka amin'ny 1.500.000 Ar fotsiny. 
 
-Afaka manao RDV fohy ve izatsy rahampitso amin'ny 10h izahay mba hampiseho anao démonstration mivantana?`,
-  },
-  GARAGE: {
-    title: "Garages & Vente de Véhicules",
-    hook: "Manao ahoana tompoko, [Nom Responsable] ao amin'ny Garage/Auto ve izao?",
-    valueProp: "Prise de rendez-vous entretien, suivi des réparations pour les clients sy stock pièces.",
-    pitch: `Ny agence digital M-IT Level Up dia manamboatra Application Web sy Platforme ho an'ny Garages Automobiles:
-- Ny client-nao dia afaka mametraka Rendez-vous entretien / réparation en ligne.
-- Afaka mamoaka devis automatique sy mampahafantatra ny client amin'ny SMS/Email rehefa vita ny fiara.
-- Catalogue d'occasion na pièces détachées azo jerena amin'ny internet.`,
-    closing: `Ny fampidirana ity système modern ity dia manomboka amin'ny 1.500.000 Ar fotsiny. 
+Afaka manao RDV fohy ve izatsy rahampitso amin'ny 10h izahay mba hampiseho anao démonstration mivantana amin'ny ordinateur-nao?`,
+    },
+    GARAGE: {
+      title: "Garages & Vente de Véhicules",
+      hook: `Manao ahoana tompoko, [Nom Responsable] ao amin'ny Garage/Auto ve izao? ${userName} avy amin'ny agence M-IT Level Up (m-itlevelup.com) aho.`,
+      valueProp: "Prise de rendez-vous entretien, suivi des réparations pour les clients sy catalogue véhicules.",
+      pitch: `Ny agence digital M-IT Level Up dia manamboatra Application Web sy Platforme ho an'ny Garages Automobiles:
+- Ny client-nao dia afaka mametraka Rendez-vous entretien / réparation en ligne amin'ny alalan'ny site.
+- Suivi des réparations : afaka mampahafantatra ny client amin'ny SMS/Email rehefa vita ny fiara.
+- Catalogue d'occasion na pièces détachées azo jerena mivantana amin'ny internet.`,
+      closing: `Ny fampidirana ity système moderne ity dia manomboka amin'ny 1.500.000 Ar fotsiny (amorti amin'ny client 2 fotsiny). 
 
 Rahoviana ianao no afaka androany na rahampitso mba hiresahantsika azy fohy amin'ny téléphone na mihaona?`,
-  },
-  TRAVEL: {
-    title: "Agences de Voyage & Tourisme",
-    hook: "Salama tompoko, Rakoto avy amin'ny M-IT Level Up (m-itlevelup.com) mpanao Application Web sy Digitalisation.",
-    valueProp: "Circuits touristiques Madagascar, réservation en ligne sy paiement sécurisé.",
-    pitch: `Ireo touristes sy clients mpanao voyage ankehitriny dia mikaroka sy mameno réservation mialoha amin'ny Internet.
+    },
+    TRAVEL: {
+      title: "Agences de Voyage & Tourisme",
+      hook: `Salama tompoko, ${userName} avy amin'ny M-IT Level Up (m-itlevelup.com) mpanao Application Web sy Digitalisation Tourisme.`,
+      valueProp: "Circuits touristiques Madagascar, réservation en ligne sy paiement sécurisé.",
+      pitch: `Ireo touristes sy clients mpanao voyage ankehitriny dia mikaroka sy mameno réservation mialoha amin'ny Internet.
 
 Ny Application Web novolavolain'ny M-IT Level Up dia ahafahanao:
 - Mampiseho ny circuits touristiques rehetra ao Madagascar (Nosy Be, RN7, Morondava, SAVA...).
-- System-na réservation automatique amin'ny teny Frantsay sy Anglisy.
+- Système-na réservation automatique amin'ny teny Frantsay sy Anglisy.
 - Mampitombo avy hatrany ny client-nao avy any ivelany sy eto an-toerana.`,
-    closing: `Ny solusy novolavolainay dia manomboka amin'ny 1.500.000 Ar fotsiny. 
+      closing: `Ny solusy novolavolainay dia manomboka amin'ny 1.500.000 Ar fotsiny. 
 
 Afaka manao RDV fohy 10 minitra ve izatsy mba hampisehoanay anao ny exemple d'application web efa novolavolainay?`,
-  },
-  PHARMACY: {
-    title: "Pharmacies & Cliniques Médicales",
-    hook: "Manao ahoana tompoko, amin'ny resaka digital sante sy gestion ao amin'ny [Nom Clinique/Pharmacie] ihany izao...",
-    valueProp: "Gestion de stock médicaments, garde en ligne sy prise de RDV médical.",
-    pitch: `Ny agence M-IT Level Up dia manolotra Application Web manokana ho an'ny domaine médical:
+    },
+    PHARMACY: {
+      title: "Pharmacies & Cliniques Médicales",
+      hook: `Manao ahoana tompoko, amin'ny resaka digital santé sy gestion ao amin'ny [Nom Clinique/Pharmacie] ihany izao... ${userName} avy amin'ny M-IT Level Up.`,
+      valueProp: "Gestion de stock médicaments, garde en ligne sy prise de RDV médical.",
+      pitch: `Ny agence M-IT Level Up dia manolotra Application Web manokana ho an'ny domaine médical:
 - Mampiseho ny horaires de garde sy localisation Google Maps ho an'ny pharmacie.
-- System-na prise de RDV médical en ligne ho an'ny cliniques sy cabinets.
+- Système-na prise de RDV médical en ligne ho an'ny cliniques sy cabinets.
 - Mampitombo ny fahatokisan'ny mpanjifa amin'ny alalan'ny plateforme moderne.`,
-    closing: `Packs manomboka amin'ny 1.500.000 Ar fotsiny. Afaka mandefa solontena manazava izany izahay amin'ity herinandro ity.`,
-  },
-  LAWYER: {
-    title: "Avocats, Comptables & Architechtet",
-    hook: "Salama Maître / Monsieur le Directeur, Rakoto avy amin'ny agence M-IT Level Up (m-itlevelup.com) aho.",
-    valueProp: "Cabinet d'expert prestige, prise de rendez-vous consultation en ligne sy visibilité Google.",
-    pitch: `Ireo mpanjifa mitady Cabinet d'Avocat, Expert-Comptable na Architecte dia mikaroka amin'ny Google sy Internet alohan'ny hifandraisana.
+      closing: `Packs manomboka amin'ny 1.500.000 Ar fotsiny. Afaka mandefa solontena manazava izany izahay amin'ity herinandro ity.`,
+    },
+    LAWYER: {
+      title: "Avocats, Experts-Comptables & Architectes",
+      hook: `Salama Maître / Monsieur le Directeur, ${userName} avy amin'ny agence M-IT Level Up (m-itlevelup.com) aho.`,
+      valueProp: "Cabinet d'expert prestige, prise de rendez-vous consultation en ligne sy visibilité Google.",
+      pitch: `Ireo mpanjifa mitady Cabinet d'Avocat, Expert-Comptable na Architecte dia mikaroka amin'ny Google sy Internet alohan'ny hifandraisana.
 
 Ny Application Web avy amin'ny M-IT Level Up:
 - Mampiseho ny domaine d'expertise-nao amin'ny fomba haut de gamme (Prestige).
 - Formulaire prise de rendez-vous consultation en ligne.
 - Pejy SEO mivoaka voalohany amin'ny rehetra mikaroka ao amin'ny [Ville].`,
-    closing: `Offre clé en main manomboka amin'ny 1.500.000 Ar. Rahoviana ianao no manam-potoana kely hiresahana azy?`,
-  },
-};
+      closing: `Offre clé en main manomboka amin'ny 1.500.000 Ar. Rahoviana ianao no manam-potoana kely hiresahana azy?`,
+    },
+  };
 
-const OBJECTIONS = [
-  {
-    objection: "« Lafo be izany 1.500.000 Ar izany »",
-    response:
-      "Azoko tsara ny fomba fijerinao tompoko. Fa eritrereto izao: ny Application Web dia TSY dépense fa INVESTISSEMENT mampiditra mpanjifa vaovao isam-bolana. Raha mahazo client vaovao 2 na 3 fotsiny ianao dia efa miverina (amorti) ny volanao. Ary ao amin'ny M-IT Level Up dia misy facility de paiement (paiment en plusieurs fois).",
-  },
-  {
-    objection: "« Efa manana Page Facebook izahay »",
-    response:
-      "Tena tsara izany tompoko! Ny Page Facebook dia tsara amin'ny communication quotidienne, fa ny Application Web no manome Credibilité & Professionnalisme ampy. Misy mpanjifa maro (sady lehibe) TSY mampiasa Facebook fa Google fotsiny. Ary ny Web App dia misy système de réservation sy gestion automatique tsy hita ao amin'ny Facebook.",
-  },
-  {
-    objection: "« Tsy ilaina aloha izao amin'izao fotoana izao »",
-    response:
-      "Azoko tsara. Fa izao tompoko: ireo concurrent-nao ao [Ville] dia efa manomboka miditra amin'ny Digitalisation. Raha miandry ianao dia ny concurrent no hahazo ireo mpanjifa mikaroka en ligne. Nahoana raha manao RDV fohy 10 minitra hijerena ny potentiel izao?",
-  },
-  {
-    objection: "« Tsy manam-potoana aho hiresahana an'izany »",
-    response:
-      "Tsy maninona mihitsy tompoko. Tsy handany fotoana izahay: afaka mandefa présentation fohy amin'ny WhatsApp na Email anao ve izahay, dia iantsoana anao fotsiny afaka 2 andro rehefa hitanao?",
-  },
-];
-
-export default function ScriptsVentePage() {
-  const [selectedSector, setSelectedSector] = useState("BTP");
-  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const OBJECTIONS = [
+    {
+      objection: "« Lafo be izany 1.500.000 Ar izany »",
+      response:
+        "Azoko tsara ny fomba fijerinao tompoko. Fa eritrereto izao: ny Application Web dia TSY dépense fa INVESTISSEMENT mampiditra mpanjifa vaovao isam-bolana. Raha mahazo client vaovao 2 na 3 fotsiny ianao dia efa miverina (amorti) ny volanao. Ary ao amin'ny M-IT Level Up dia misy facility de paiement (paiment en plusieurs fois).",
+    },
+    {
+      objection: "« Efa manana Page Facebook izahay »",
+      response:
+        "Tena tsara izany tompoko! Ny Page Facebook dia tsara amin'ny communication quotidienne, fa ny Application Web no manome Credibilité & Professionnalisme ampy. Misy mpanjifa maro (sady lehibe) TSY mampiasa Facebook fa Google fotsiny. Ary ny Web App dia misy système de réservation sy gestion automatique tsy hita ao amin'ny Facebook.",
+    },
+    {
+      objection: "« Tsy ilaina aloha izao amin'izao fotoana izao »",
+      response:
+        "Azoko tsara. Fa izao tompoko: ireo concurrent-nao ao [Ville] dia efa manomboka miditra amin'ny Digitalisation. Raha miandry ianao dia ny concurrent no hahazo ireo mpanjifa mikaroka en ligne. Nahoana raha manao RDV fohy 10 minitra hijerena ny potentiel izao?",
+    },
+    {
+      objection: "« Tsy manam-potoana aho hiresahana an'izany »",
+      response:
+        "Tsy maninona mihitsy tompoko. Tsy handany fotoana izahay: afaka mandefa présentation fohy amin'ny WhatsApp na Email anao ve izahay, dia iantsoana anao fotsiny afaka 2 andro rehefa hitanao?",
+    },
+  ];
 
   const currentScript = SECTOR_SCRIPTS[selectedSector] || SECTOR_SCRIPTS["BTP"];
 
@@ -143,18 +152,18 @@ export default function ScriptsVentePage() {
 
   return (
     <div className="space-y-6">
-      {/* Agency Branding Header */}
+      {/* Top Banner with Connected Commercial Name */}
       <div className="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-300 border border-brand-400/30">
-              Guide Commercial Malagasy
+              Commercial Connecté : {userName}
             </span>
             <span className="text-xs text-slate-300">Agence M-IT Level Up</span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">Scripts de Prospection Téléphonique (Fiteny Malagasy)</h2>
+          <h2 className="text-xl font-bold tracking-tight">Scripts de Prospection Haute-Conversion (Malgache)</h2>
           <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-            Pitches téléphoniques et argumentation sur-mesure pour convaincre les entreprises de Madagascar d'acquérir une application web à partir de <span className="font-bold text-amber-300">1 500 000 Ar</span>.
+            Pitches téléphoniques optimisés pour convaincre les entreprises de Madagascar d'acquérir une application web à partir de <span className="font-bold text-amber-300">1 500 000 Ar</span>.
           </p>
         </div>
 
@@ -206,7 +215,7 @@ export default function ScriptsVentePage() {
           <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full">
-                Etape 1 : Fiarahabana & Fampidirana (Hook)
+                Etape 1 : Fiarahabana & Fampidirana (Accroche)
               </span>
               <button
                 onClick={() => copyToClipboard(currentScript.hook, "hook")}
@@ -225,7 +234,7 @@ export default function ScriptsVentePage() {
           <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                Etape 2 : Pitch Manokana ({currentScript.title})
+                Etape 2 : Pitch Haute-Conversion ({currentScript.title})
               </span>
               <button
                 onClick={() => copyToClipboard(currentScript.pitch, "pitch")}
@@ -250,7 +259,7 @@ export default function ScriptsVentePage() {
           <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full">
-                Etape 3 : Tarif Base (1.500.000 Ar) & Prise de RDV
+                Etape 3 : Offre Tarifaire (1.500.000 Ar) & Prise de RDV
               </span>
               <button
                 onClick={() => copyToClipboard(currentScript.closing, "closing")}
@@ -291,10 +300,11 @@ export default function ScriptsVentePage() {
           <div className="p-5 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-700 text-white shadow-md space-y-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-300" />
-              <span className="text-xs font-bold uppercase tracking-wider">Atsangano ny M-IT Level Up</span>
+              <span className="text-xs font-bold uppercase tracking-wider">M-IT Level Up Expert</span>
             </div>
             <p className="text-xs text-indigo-100 leading-relaxed">
-              M-IT Level Up (https://m-itlevelup.com/) dia Agence Digital Malagasy manam-pahaizana amin'ny Création Web & Application sur-mesure. 
+              Commercial connecté : <span className="font-bold text-white">{userName}</span>. 
+              Utilisez ce pitch pour amener le client vers un RDV de démonstration. Une fois signé, le prospect passe automatiquement dans l'onglet <span className="font-bold text-amber-300">Techniciens</span> pour la prise en charge technique.
             </p>
             <div className="pt-2 text-[11px] font-bold text-amber-200 border-t border-white/20">
               Tarif minimum : 1.500.000 Ariary (Facilité de paiement dispo).
