@@ -26,6 +26,7 @@ import {
   MessageSquareCode,
   Copy,
   Check,
+  TrendingDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -169,14 +170,16 @@ export function ProspectDetailModal({ prospect, onClose, onUpdate }: ProspectDet
     }
   };
 
-  // Malagasy Pitch customized for this specific prospect
+  // Malagasy Pitch customized for this specific prospect (2-Tier Strategy)
   const malagasyPitchText = `Manao ahoana tompoko, ${prospect.decisionMaker || "Responsable"} ao amin'ny ${prospect.name} ve izao? 
 
 Rakoto avy amin'ny agence M-IT Level Up (https://m-itlevelup.com/) aho. 
 
-Ny antony hianggilanay anao dia mahita izahay fa tena mandeha tsara ny activité-nao amin'ny ${prospect.category} ao ${prospect.city}. Izahay ao amin'ny M-IT Level Up dia manamboatra Application Web sur-mesure & Site Professionnel ho an'ny ${prospect.category} ahafahana mampitombo ny mpanjifanao sy manao numérisation.
+1️⃣ OFFRE PRINCIPALE : APPLICATION WEB SUR-MESURE (1.500.000 Ar)
+Ny antony hianggilanay anao dia ny M-IT Level Up dia manamboatra Application Web sur-mesure ho an'ny ${prospect.category} ao ${prospect.city} ahafahan'ny mpanjifanao manao réservation en ligne, devis automatique ary gestion. Offre spéciale : 1.500.000 Ar.
 
-Offre spéciale manomboka amin'ny 1.500.000 Ar fotsiny ho an'ny entreprise ao ${prospect.city}. 
+2️⃣ OFFRE REBOND / DOWNSELL : SITE INTERNET VITRINE (800.000 Ar)
+Raha mi-hésiter amin'ny budget ianao, izahay koa dia manao SITE INTERNET VITRINE PROFESSIONNEL manomboka amin'ny 800.000 Ar fotsiny ho an'ny ${prospect.name} ao ${prospect.city}!
 
 Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
 
@@ -290,7 +293,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
             }`}
           >
             <MessageSquareCode className="w-3.5 h-3.5" />
-            <span>Script Pitch (Malgache)</span>
+            <span>Script Pitch (Malgache 2 Niveaux)</span>
           </button>
           <button
             onClick={() => setActiveTab("calls")}
@@ -439,10 +442,10 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
               <div className="p-4 bg-gradient-to-r from-slate-900 to-indigo-950 rounded-xl text-white flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">
-                    Pitch Téléphonique Malagasy sur-mesure
+                    Pitch Téléphonique Malagasy (Stratégie 2 Niveaux)
                   </span>
                   <p className="text-xs text-slate-200 mt-0.5">
-                    Agence : <span className="font-bold text-white">M-IT Level Up (https://m-itlevelup.com/)</span> | Base : <span className="font-bold text-amber-300">1 500 000 Ar</span>
+                    1️⃣ App Web : <span className="font-bold text-amber-300">1 500 000 Ar</span> | 2️⃣ Site Web : <span className="font-bold text-emerald-400">800 000 Ar</span>
                   </p>
                 </div>
 
@@ -464,10 +467,13 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                 </p>
               </div>
 
-              <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs space-y-1.5">
-                <span className="font-bold text-amber-900">💡 Conseil Commercial :</span>
-                <p className="text-amber-800 leading-relaxed">
-                  Raha misy ilay client manao objection momba ny prix, ambarao fa misy <span className="font-bold">facilité de paiement (paiment en 2 ou 3 fois)</span> ary ny site/application web novolavolain'ny M-IT Level Up dia hahazoana mpanjifa vaovao avy hatrany.
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs space-y-1.5">
+                <span className="font-bold text-emerald-950 flex items-center gap-1">
+                  <TrendingDown className="w-4 h-4 text-emerald-600" />
+                  <span>Règle d'Or M-IT Level Up :</span>
+                </span>
+                <p className="text-emerald-900 leading-relaxed">
+                  Proposez toujours d'abord l'<strong>Application Web à 1.500.000 Ar</strong>. Si le prospect exprime une hésitation budgétaire, basculez immédiatement sur l'offre alternative <strong>Site Internet Vitrine à 800.000 Ar</strong> !
                 </p>
               </div>
             </div>
