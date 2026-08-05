@@ -18,12 +18,16 @@ for (const envPath of possibleEnvPaths) {
   }
 }
 
-// Hostinger TCP socket default (127.0.0.1 avoids Unix socket localhost auth mismatch)
-const HOSTINGER_MYSQL_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
+// CRITICAL: On Hostinger shared hosting, "localhost" uses Unix socket auth which FAILS.
+// Force 127.0.0.1 TCP socket which works. Always replace localhost with 127.0.0.1.
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL.replace('@localhost:', '@127.0.0.1:');
+}
 
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dev.db") || process.env.DATABASE_URL.includes("localhost")) {
+// Fallback: if DATABASE_URL is still missing or points to SQLite dev.db
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dev.db") || !process.env.DATABASE_URL.startsWith("mysql")) {
   if (process.env.NODE_ENV === "production" || process.platform === "linux") {
-    process.env.DATABASE_URL = HOSTINGER_MYSQL_URL;
+    process.env.DATABASE_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
   }
 }
 
