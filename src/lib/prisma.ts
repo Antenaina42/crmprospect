@@ -8,8 +8,6 @@ const possibleEnvPaths = [
   path.resolve(process.cwd(), '.env.production'),
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), '.env.local'),
-  path.resolve(__dirname, '../../.env.production'),
-  path.resolve(__dirname, '../../.env'),
 ];
 
 for (const envPath of possibleEnvPaths) {
@@ -20,10 +18,12 @@ for (const envPath of possibleEnvPaths) {
   }
 }
 
-// Fallback Hostinger MySQL database URL if DATABASE_URL is not set or points to dev.db
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dev.db") || !process.env.DATABASE_URL.startsWith("mysql")) {
+// Hostinger TCP socket default (127.0.0.1 avoids Unix socket localhost auth mismatch)
+const HOSTINGER_MYSQL_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
+
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dev.db") || process.env.DATABASE_URL.includes("localhost")) {
   if (process.env.NODE_ENV === "production" || process.platform === "linux") {
-    process.env.DATABASE_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
+    process.env.DATABASE_URL = HOSTINGER_MYSQL_URL;
   }
 }
 
