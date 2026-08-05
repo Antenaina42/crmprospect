@@ -1,20 +1,28 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
+import fs from 'fs';
 
-// Ensure .env is explicitly loaded in production
-if (!process.env.DATABASE_URL) {
+const HOSTINGER_MYSQL_URL = "mysql://u697568943_prospect:Prospect2026@localhost:3306/u697568943_prospect";
+
+// Try loading environment files if DATABASE_URL is missing or empty
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === '') {
   try {
-    require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
-  } catch (e) {
-    // Dotenv fallback
-  }
+    const envOnlinePath = path.resolve(process.cwd(), '.env.production');
+    const envPath = path.resolve(process.cwd(), '.env');
+
+    if (fs.existsSync(envOnlinePath)) {
+      require('dotenv').config({ path: envOnlinePath });
+    } else if (fs.existsSync(envPath)) {
+      require('dotenv').config({ path: envPath });
+    }
+  } catch (e) {}
 }
 
-// Automatic Hostinger MySQL fallback if DATABASE_URL is not provided by server environment
-const isProductionServer = process.env.NODE_ENV === 'production' || process.env.HOSTINGER || process.env.USER === 'u697568943';
-
-if (!process.env.DATABASE_URL && isProductionServer) {
-  process.env.DATABASE_URL = "mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect";
+// Guarantee Hostinger MySQL connection string in production if DATABASE_URL is still empty or points to SQLite
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dev.db") || !process.env.DATABASE_URL.startsWith("mysql")) {
+  if (process.env.NODE_ENV === "production" || process.platform === "linux") {
+    process.env.DATABASE_URL = HOSTINGER_MYSQL_URL;
+  }
 }
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
