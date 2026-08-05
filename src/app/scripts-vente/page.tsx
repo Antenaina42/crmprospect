@@ -278,37 +278,52 @@ export default function ScriptsVentePage() {
   const [selectedSector, setSelectedSector] = useState("BTP");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // Editable scripts state per user
+  // Editable scripts state per user with fallback safety
   const [sectorScripts, setSectorScripts] = useState<Record<string, SectorScriptData>>(ALL_BUSINESS_SECTORS);
   const [isEditing, setIsEditing] = useState(false);
   const [editedScript, setEditedScript] = useState<SectorScriptData>(ALL_BUSINESS_SECTORS["BTP"]);
   const [savedNotice, setSavedNotice] = useState(false);
 
-  // Load custom scripts from localStorage
+  // Safe getter for sector script data
+  const getSafeSectorData = (sectorKey: string, source: Record<string, SectorScriptData>): SectorScriptData => {
+    const raw = source[sectorKey] || ALL_BUSINESS_SECTORS[sectorKey] || ALL_BUSINESS_SECTORS["BTP"];
+    return {
+      title: raw.title || ALL_BUSINESS_SECTORS["BTP"].title,
+      hook: raw.hook || "",
+      valueProp: raw.valueProp || "",
+      primaryPitch: raw.primaryPitch || "",
+      primaryClosing: raw.primaryClosing || "",
+      downsellPitch: raw.downsellPitch || "",
+      downsellClosing: raw.downsellClosing || "",
+      customBlocks: Array.isArray(raw.customBlocks) ? raw.customBlocks : [],
+    };
+  };
+
+  // Load custom scripts from localStorage safely after mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`user_custom_scripts_${userName}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSectorScripts({ ...ALL_BUSINESS_SECTORS, ...parsed });
+        if (parsed && typeof parsed === "object") {
+          setSectorScripts((prev) => ({ ...prev, ...parsed }));
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error("LocalStorage read error in scripts page:", e);
     }
   }, [userName]);
 
   useEffect(() => {
-    if (sectorScripts[selectedSector]) {
-      setEditedScript(sectorScripts[selectedSector]);
-    } else {
-      setEditedScript(ALL_BUSINESS_SECTORS["BTP"]);
-    }
+    const safeData = getSafeSectorData(selectedSector, sectorScripts);
+    setEditedScript(safeData);
   }, [selectedSector, sectorScripts]);
 
   const handleSaveCustomScript = () => {
+    const safeEdited = getSafeSectorData(selectedSector, { [selectedSector]: editedScript });
     const updated = {
       ...sectorScripts,
-      [selectedSector]: editedScript,
+      [selectedSector]: safeEdited,
     };
     setSectorScripts(updated);
     try {
@@ -335,29 +350,29 @@ export default function ScriptsVentePage() {
       title: "Nouvel Argumentaire Personnalisé",
       content: "Saisissez ici le texte du nouvel argumentaire en malgache...",
     };
-    setEditedScript({
-      ...editedScript,
-      customBlocks: [...(editedScript.customBlocks || []), newBlock],
-    });
+    setEditedScript((prev) => ({
+      ...prev,
+      customBlocks: [...(prev.customBlocks || []), newBlock],
+    }));
   };
 
   const handleRemoveCustomBlock = (id: string) => {
-    setEditedScript({
-      ...editedScript,
-      customBlocks: (editedScript.customBlocks || []).filter((b) => b.id !== id),
-    });
+    setEditedScript((prev) => ({
+      ...prev,
+      customBlocks: (prev.customBlocks || []).filter((b) => b.id !== id),
+    }));
   };
 
   const handleUpdateCustomBlock = (id: string, field: "title" | "content", value: string) => {
-    setEditedScript({
-      ...editedScript,
-      customBlocks: (editedScript.customBlocks || []).map((b) =>
+    setEditedScript((prev) => ({
+      ...prev,
+      customBlocks: (prev.customBlocks || []).map((b) =>
         b.id === id ? { ...b, [field]: value } : b
       ),
-    });
+    }));
   };
 
-  const currentScript = sectorScripts[selectedSector] || ALL_BUSINESS_SECTORS["BTP"];
+  const activeScript = getSafeSectorData(selectedSector, sectorScripts);
 
   // Replace [Nom Commercial] with active logged in user name dynamically
   const replaceCommercialName = (text: string) => {
@@ -431,7 +446,7 @@ export default function ScriptsVentePage() {
             Sélectionner l'activité du Prospect ({Object.keys(sectorScripts).length} secteurs disponibles) :
           </label>
           <span className="text-[11px] font-bold text-brand-600">
-            Secteur actif : {currentScript.title}
+            Secteur actif : {activeScript.title}
           </span>
         </div>
 
@@ -472,7 +487,7 @@ export default function ScriptsVentePage() {
               </span>
               {!isEditing && (
                 <button
-                  onClick={() => copyToClipboard(currentScript.hook, "hook")}
+                  onClick={() => copyToClipboard(activeScript.hook, "hook")}
                   className="text-xs text-slate-400 hover:text-brand-600 flex items-center gap-1 font-semibold"
                 >
                   {copiedField === "hook" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -484,14 +499,14 @@ export default function ScriptsVentePage() {
             {isEditing ? (
               <textarea
                 rows={3}
-                value={editedScript.hook}
+                value={editedScript.hook || ""}
                 onChange={(e) => setEditedScript({ ...editedScript, hook: e.target.value })}
                 className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium leading-relaxed"
               />
             ) : (
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/60">
                 <p className="text-xs font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
-                  "{replaceCommercialName(currentScript.hook)}"
+                  "{replaceCommercialName(activeScript.hook)}"
                 </p>
               </div>
             )}
@@ -505,7 +520,7 @@ export default function ScriptsVentePage() {
               </span>
               {!isEditing && (
                 <button
-                  onClick={() => copyToClipboard(currentScript.primaryPitch, "primaryPitch")}
+                  onClick={() => copyToClipboard(activeScript.primaryPitch, "primaryPitch")}
                   className="text-xs text-slate-400 hover:text-brand-600 flex items-center gap-1 font-semibold"
                 >
                   {copiedField === "primaryPitch" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -519,14 +534,14 @@ export default function ScriptsVentePage() {
                 <label className="text-xs font-bold text-slate-600">Texte du Pitch 1 :</label>
                 <textarea
                   rows={6}
-                  value={editedScript.primaryPitch}
+                  value={editedScript.primaryPitch || ""}
                   onChange={(e) => setEditedScript({ ...editedScript, primaryPitch: e.target.value })}
                   className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium leading-relaxed"
                 />
                 <label className="text-xs font-bold text-slate-600 block pt-1">Accroche de Clôture / Prise de RDV :</label>
                 <textarea
                   rows={3}
-                  value={editedScript.primaryClosing}
+                  value={editedScript.primaryClosing || ""}
                   onChange={(e) => setEditedScript({ ...editedScript, primaryClosing: e.target.value })}
                   className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium leading-relaxed"
                 />
@@ -535,13 +550,13 @@ export default function ScriptsVentePage() {
               <>
                 <div className="p-4.5 bg-slate-50 rounded-xl border border-slate-200/60">
                   <p className="text-xs font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
-                    {replaceCommercialName(currentScript.primaryPitch)}
+                    {replaceCommercialName(activeScript.primaryPitch)}
                   </p>
                 </div>
 
                 <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200">
                   <p className="text-xs font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
-                    "{replaceCommercialName(currentScript.primaryClosing)}"
+                    "{replaceCommercialName(activeScript.primaryClosing)}"
                   </p>
                 </div>
               </>
@@ -556,7 +571,7 @@ export default function ScriptsVentePage() {
               </span>
               {!isEditing && (
                 <button
-                  onClick={() => copyToClipboard(currentScript.downsellPitch, "downsellPitch")}
+                  onClick={() => copyToClipboard(activeScript.downsellPitch, "downsellPitch")}
                   className="text-xs text-slate-400 hover:text-emerald-700 flex items-center gap-1 font-semibold"
                 >
                   {copiedField === "downsellPitch" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -570,14 +585,14 @@ export default function ScriptsVentePage() {
                 <label className="text-xs font-bold text-slate-600">Texte du Rebond Downsell (800 000 Ar) :</label>
                 <textarea
                   rows={5}
-                  value={editedScript.downsellPitch}
+                  value={editedScript.downsellPitch || ""}
                   onChange={(e) => setEditedScript({ ...editedScript, downsellPitch: e.target.value })}
                   className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium leading-relaxed"
                 />
                 <label className="text-xs font-bold text-slate-600 block pt-1">Clôture Rebond :</label>
                 <textarea
                   rows={3}
-                  value={editedScript.downsellClosing}
+                  value={editedScript.downsellClosing || ""}
                   onChange={(e) => setEditedScript({ ...editedScript, downsellClosing: e.target.value })}
                   className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium leading-relaxed"
                 />
@@ -586,13 +601,13 @@ export default function ScriptsVentePage() {
               <>
                 <div className="p-4.5 bg-white rounded-xl border border-emerald-200">
                   <p className="text-xs font-semibold text-emerald-950 leading-relaxed whitespace-pre-line">
-                    {replaceCommercialName(currentScript.downsellPitch)}
+                    {replaceCommercialName(activeScript.downsellPitch)}
                   </p>
                 </div>
 
                 <div className="p-4 bg-emerald-100/60 rounded-xl border border-emerald-300">
                   <p className="text-xs font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
-                    "{replaceCommercialName(currentScript.downsellClosing)}"
+                    "{replaceCommercialName(activeScript.downsellClosing)}"
                   </p>
                 </div>
               </>
@@ -600,7 +615,7 @@ export default function ScriptsVentePage() {
           </div>
 
           {/* Section 4: Dynamic Custom Text Blocks Added by User */}
-          {((isEditing ? editedScript.customBlocks : currentScript.customBlocks) || []).map((block, idx) => (
+          {((isEditing ? editedScript.customBlocks : activeScript.customBlocks) || []).map((block, idx) => (
             <div key={block.id} className="p-6 bg-white border border-indigo-200 rounded-2xl shadow-card space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 flex items-center gap-1.5">
@@ -637,7 +652,7 @@ export default function ScriptsVentePage() {
                     <label className="text-xs font-bold text-slate-600 block mb-1">Titre de la zone de texte :</label>
                     <input
                       type="text"
-                      value={block.title}
+                      value={block.title || ""}
                       onChange={(e) => handleUpdateCustomBlock(block.id, "title", e.target.value)}
                       className="w-full p-2.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs font-bold text-slate-900"
                     />
@@ -646,7 +661,7 @@ export default function ScriptsVentePage() {
                     <label className="text-xs font-bold text-slate-600 block mb-1">Texte de l'argumentaire :</label>
                     <textarea
                       rows={5}
-                      value={block.content}
+                      value={block.content || ""}
                       onChange={(e) => handleUpdateCustomBlock(block.id, "content", e.target.value)}
                       className="w-full p-3.5 bg-amber-50/50 border border-amber-300 rounded-xl text-xs text-slate-900 font-medium leading-relaxed"
                     />
@@ -683,7 +698,7 @@ export default function ScriptsVentePage() {
                 <span>Mode Édition en cours</span>
               </h4>
               <p className="text-xs text-amber-900 leading-relaxed">
-                Vous pouvez modifier les textes et ajouter autant de zones de texte personnalisées (Titre + Contenu) que vous souhaitez pour le secteur <strong>{currentScript.title}</strong>.
+                Vous pouvez modifier les textes et ajouter autant de zones de texte personnalisées (Titre + Contenu) que vous souhaitez pour le secteur <strong>{activeScript.title}</strong>.
               </p>
 
               <button
