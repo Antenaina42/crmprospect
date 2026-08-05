@@ -1,20 +1,27 @@
 const path = require('path');
 const fs = require('fs');
 
-// Auto-load env files for Hostinger deployment
-const envProd = path.resolve(process.cwd(), '.env.production');
-const envLocal = path.resolve(process.cwd(), '.env');
+// Multi-path dotenv loader for Hostinger entry point
+const possibleEnvPaths = [
+  path.resolve(process.cwd(), '.env.production'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(__dirname, '.env.production'),
+  path.resolve(__dirname, '.env'),
+];
 
-if (fs.existsSync(envProd)) {
-  require('dotenv').config({ path: envProd });
-} else if (fs.existsSync(envLocal)) {
-  require('dotenv').config({ path: envLocal });
+for (const envPath of possibleEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    try {
+      require('dotenv').config({ path: envPath });
+    } catch (e) {}
+  }
 }
 
-// Fallback Hostinger MySQL database URL
+// Guarantee Hostinger MySQL database URL
 if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith('mysql')) {
   if (process.env.NODE_ENV === 'production' || process.platform === 'linux') {
-    process.env.DATABASE_URL = 'mysql://u697568943_prospect:Prospect2026@localhost:3306/u697568943_prospect';
+    process.env.DATABASE_URL = 'mysql://u697568943_prospect:Prospect2026@127.0.0.1:3306/u697568943_prospect';
   }
 }
 
