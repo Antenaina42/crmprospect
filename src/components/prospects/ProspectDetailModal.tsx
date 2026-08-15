@@ -203,7 +203,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
         className="w-full max-w-2xl bg-white h-full shadow-modal flex flex-col justify-between overflow-hidden"
       >
         {/* Drawer Top Header */}
-        <div className="p-6 border-b border-slate-200/80 bg-slate-50/50 flex items-start justify-between">
+        <div className="p-4 sm:p-6 border-b border-slate-200/80 bg-slate-50/50 flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700 border border-brand-200">
@@ -211,7 +211,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
               </span>
               <span className="text-xs text-slate-400 font-medium">{prospect.city}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 leading-tight">{prospect.name}</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">{prospect.name}</h2>
             {prospect.decisionMaker && (
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Responsable : <span className="text-slate-800 font-semibold">{prospect.decisionMaker}</span>
@@ -227,7 +227,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
         </div>
 
         {/* Quick Action Control Bar */}
-        <div className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -277,7 +277,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-6 border-b border-slate-200/80 flex items-center gap-6 text-xs font-semibold bg-white overflow-x-auto">
+        <div className="px-4 sm:px-6 border-b border-slate-200/80 flex items-center gap-4 sm:gap-6 text-xs font-semibold bg-white overflow-x-auto">
           <button
             onClick={() => setActiveTab("overview")}
             className={`py-3 border-b-2 transition-colors whitespace-nowrap ${
@@ -286,7 +286,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            Fiche & Historique
+            Fiche & Infos
           </button>
           <button
             onClick={() => setActiveTab("script")}
@@ -297,7 +297,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
             }`}
           >
             <MessageSquareCode className="w-3.5 h-3.5" />
-            <span>Script Pitch (Malgache 2 Niveaux)</span>
+            <span>Script Pitch (MG)</span>
           </button>
           <button
             onClick={() => setActiveTab("calls")}
@@ -307,7 +307,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            Appels Téléphoniques ({prospect.callLogs?.length || 0})
+            Appels ({prospect.callLogs?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab("appointments")}
@@ -317,16 +317,49 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            Agenda & RDV ({prospect.appointments?.length || 0})
+            RDV ({prospect.appointments?.length || 0})
           </button>
         </div>
 
         {/* Tab Contents */}
-        <div className="p-6 flex-1 overflow-y-auto space-y-6 bg-slate-50/30">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-4 sm:space-y-6 bg-slate-50/30">
           {activeTab === "overview" && (
             <>
+              {/* Direct Touch Call Bar */}
+              {prospect.phone && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-emerald-600 text-white rounded-xl">
+                      <PhoneCall className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block">Appel Direct Mobile</span>
+                      <span className="text-xs font-bold text-slate-900">{prospect.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`tel:${(prospect.phone || "").replace(/[^\d+]/g, "")}`}
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Appeler</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${(prospect.phone || "").replace(/[^\d]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100"
+                    >
+                      WhatsApp
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Contact Cards */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     Coordonnées Directes
@@ -345,13 +378,13 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                     {prospect.email && (
                       <p className="flex items-center gap-2 text-brand-600">
                         <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{prospect.email}</span>
+                        <a href={`mailto:${prospect.email}`} className="hover:underline">{prospect.email}</a>
                       </p>
                     )}
                     {prospect.website && (
                       <p className="flex items-center gap-2 text-brand-600">
                         <Globe className="w-3.5 h-3.5 text-slate-400" />
-                        <a href={prospect.website} target="_blank" className="hover:underline">
+                        <a href={prospect.website} target="_blank" rel="noopener noreferrer" className="hover:underline truncate max-w-[200px]">
                           {prospect.website}
                         </a>
                       </p>
@@ -366,7 +399,7 @@ Rahoviana ianao no afaka hanaovanay démonstration fohy 10 minitra?`;
                   <div className="text-xs text-slate-800 space-y-1.5 pt-1">
                     <p className="flex items-start gap-2">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                      <span>{prospect.address}</span>
+                      <span className="leading-tight">{prospect.address}</span>
                     </p>
                     <p className="text-slate-500 font-medium">
                       Commercial affecté :{" "}
