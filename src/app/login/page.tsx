@@ -58,7 +58,7 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 mx-auto flex items-center justify-center text-white shadow-lg shadow-brand-500/25 mb-3">
             <Building2 className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Prospect Mada CRM</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">CRM Prospect M-It LevelUp</h1>
           <p className="text-sm text-slate-500 font-medium mt-1">
             Plateforme de prospection commerciale B2B Madagascar
           </p>

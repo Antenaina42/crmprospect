@@ -10,9 +10,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const userId = (session.user as any)?.id;
+    const userRole = (session.user as any)?.role || "COMMERCIAL";
+    const isSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+
     let quotes: any[] = [];
     try {
+      const where: any = {};
+      if (!isSuperAdmin) {
+        where.OR = [
+          { createdById: userId },
+          { prospect: { assignedToId: userId } },
+          { prospect: { createdById: userId } },
+        ];
+      }
+
       quotes = await prisma.quote.findMany({
+        where,
         include: {
           prospect: { select: { id: true, name: true, phone: true, email: true, city: true } },
           createdBy: { select: { id: true, name: true } },

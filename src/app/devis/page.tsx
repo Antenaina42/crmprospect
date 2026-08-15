@@ -14,7 +14,7 @@ export default function DevisPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedProspectId, setSelectedProspectId] = useState("");
   const [items, setItems] = useState([
-    { description: "Licence Prospect Mada CRM - Formule Business", quantity: 1, unitPrice: 1500000 },
+    { description: "Application Web Sur-Mesure / CRM Prospect M-It LevelUp", quantity: 1, unitPrice: 1500000 },
   ]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,12 +91,12 @@ export default function DevisPage() {
     // Header Branding
     doc.setFontSize(20);
     doc.setTextColor(79, 70, 229);
-    doc.text("PROSPECT MADA CRM", 14, 20);
+    doc.text("CRM PROSPECT M-IT LEVELUP", 14, 20);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text("Solutions SaaS de Prospection B2B", 14, 26);
-    doc.text("Antananarivo, Madagascar | Email: contact@prospectmada.mg", 14, 31);
+    doc.text("M-IT Level Up - Agence Digitale & Solutions Web", 14, 26);
+    doc.text("Antananarivo, Madagascar | https://m-itlevelup.com", 14, 31);
 
     doc.setFontSize(16);
     doc.setTextColor(15, 23, 42);
