@@ -12,8 +12,12 @@ import {
   ShieldCheck,
   Plus,
   CheckCircle2,
+  AlertCircle,
   RefreshCw,
   Sparkles,
+  ExternalLink,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function ParametresPage() {
@@ -23,11 +27,22 @@ export default function ParametresPage() {
 
   // Settings State
   const [googleApiKey, setGoogleApiKey] = useState("");
+  const [showGoogleKey, setShowGoogleKey] = useState(false);
   const [smtpHost, setSmtpHost] = useState("smtp.gmail.com");
-  const [smtpUser, setSmtpUser] = useState("prospect@prospectmada.mg");
+  const [smtpUser, setSmtpUser] = useState("");
   const [whatsAppToken, setWhatsAppToken] = useState("");
   const [voipEndpoint, setVoipEndpoint] = useState("");
+  const [savingSettings, setSavingSettings] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Google Key Test State
+  const [testingKey, setTestingKey] = useState(false);
+  const [keyTestResult, setKeyTestResult] = useState<{
+    valid: boolean;
+    message?: string;
+    error?: string;
+  } | null>(null);
 
   // Create user modal state
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -37,15 +52,28 @@ export default function ParametresPage() {
   const [newUserPassword, setNewUserPassword] = useState("admin123");
   const [submittingUser, setSubmittingUser] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsersAndSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      setUsers(Array.isArray(data?.users) ? data.users : []);
-      setAuditLogs(Array.isArray(data?.auditLogs) ? data.auditLogs : []);
+      const [usersRes, settingsRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/settings"),
+      ]);
+
+      const usersData = await usersRes.json();
+      setUsers(Array.isArray(usersData?.users) ? usersData.users : []);
+      setAuditLogs(Array.isArray(usersData?.auditLogs) ? usersData.auditLogs : []);
+
+      const settingsData = await settingsRes.json();
+      if (settingsData && !settingsData.error) {
+        if (settingsData.googleApiKey) setGoogleApiKey(settingsData.googleApiKey);
+        if (settingsData.smtpHost) setSmtpHost(settingsData.smtpHost);
+        if (settingsData.smtpUser) setSmtpUser(settingsData.smtpUser);
+        if (settingsData.whatsAppToken) setWhatsAppToken(settingsData.whatsAppToken);
+        if (settingsData.voipEndpoint) setVoipEndpoint(settingsData.voipEndpoint);
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching users and settings:", e);
       setUsers([]);
       setAuditLogs([]);
     } finally {
@@ -54,13 +82,77 @@ export default function ParametresPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsersAndSettings();
   }, []);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setSavingSettings(true);
+    setSavedSuccess(false);
+    setSaveError(null);
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          googleApiKey: googleApiKey.trim(),
+          smtpHost: smtpHost.trim(),
+          smtpUser: smtpUser.trim(),
+          whatsAppToken: whatsAppToken.trim(),
+          voipEndpoint: voipEndpoint.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 4000);
+      } else {
+        setSaveError(data.error || "Erreur lors de l'enregistrement");
+      }
+    } catch (err: any) {
+      setSaveError(err.message || "Erreur de connexion");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleTestGoogleKey = async () => {
+    if (!googleApiKey.trim()) {
+      setKeyTestResult({
+        valid: false,
+        error: "Veuillez d'abord saisir votre clé API Google Places ci-dessus avant de lancer le test.",
+      });
+      return;
+    }
+
+    setTestingKey(true);
+    setKeyTestResult(null);
+
+    try {
+      const res = await fetch(`/api/settings?testKey=${encodeURIComponent(googleApiKey.trim())}`);
+      const data = await res.json();
+
+      if (data.valid) {
+        setKeyTestResult({
+          valid: true,
+          message: data.message || "Clé API valide et connectée à Google Places !",
+        });
+      } else {
+        setKeyTestResult({
+          valid: false,
+          error: data.error || "Clé API non acceptée par Google Cloud.",
+        });
+      }
+    } catch (err: any) {
+      setKeyTestResult({
+        valid: false,
+        error: "Impossible de contacter l'API de test : " + err.message,
+      });
+    } finally {
+      setTestingKey(false);
+    }
   };
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -82,7 +174,7 @@ export default function ParametresPage() {
         setShowAddUserModal(false);
         setNewUserName("");
         setNewUserEmail("");
-        fetchUsers();
+        fetchUsersAndSettings();
       }
     } catch (e) {
       console.error(e);
@@ -104,7 +196,7 @@ export default function ParametresPage() {
           </span>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1">Paramètres du CRM Prospect M-It LevelUp</h2>
           <p className="text-xs text-slate-500">
-            Gestion des utilisateurs, des clés API Google Places, SMTP, WhatsApp et règles de sécurité.
+            Gestion des utilisateurs, clé API Google Places, configuration SMTP et règles de prospection.
           </p>
         </div>
 
@@ -113,14 +205,21 @@ export default function ParametresPage() {
           className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
-          <span>Nouvel Utilisateur</span>
+          <span>Créer un Utilisateur</span>
         </button>
       </div>
 
       {savedSuccess && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Paramètres sauvegardés avec succès.</span>
+          <span>Configuration et clé API Google Places enregistrées avec succès !</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{saveError}</span>
         </div>
       )}
 
@@ -191,152 +290,188 @@ export default function ParametresPage() {
 
         {/* Integration API Config */}
         <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Key className="w-4 h-4 text-brand-600" />
-            <span>Clés d'Intégration API</span>
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Key className="w-4 h-4 text-brand-600" />
+              <span>Clés d'Intégration API</span>
+            </h3>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              Persistant
+            </span>
+          </div>
 
-          <form onSubmit={handleSaveSettings} className="space-y-3 text-xs">
+          <form onSubmit={handleSaveSettings} className="space-y-3.5 text-xs">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Clé API Google Places</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-700">Clé API Google Places</label>
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleKey(!showGoogleKey)}
+                  className="text-[11px] text-slate-400 hover:text-brand-600 flex items-center gap-1 font-semibold"
+                >
+                  {showGoogleKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showGoogleKey ? "Masquer" : "Afficher"}</span>
+                </button>
+              </div>
+
               <input
-                type="password"
+                type={showGoogleKey ? "text" : "password"}
                 placeholder="AIzaSy..."
                 value={googleApiKey}
-                onChange={(e) => setGoogleApiKey(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
+                onChange={(e) => {
+                  setGoogleApiKey(e.target.value);
+                  setKeyTestResult(null);
+                }}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
-              <span className="text-[10px] text-slate-400 mt-0.5 block">
-                Laisser vide pour utiliser le simulateur Madagascar.
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Si vide, le CRM utilise automatiquement le simulateur Madagascar.
               </span>
+
+              {/* Test Key Button */}
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={testingKey || !googleApiKey.trim()}
+                  onClick={handleTestGoogleKey}
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-brand-700 border border-indigo-200 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  {testingKey ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-brand-600" />}
+                  <span>{testingKey ? "Test en cours..." : "Tester la Clé Google"}</span>
+                </button>
+              </div>
+
+              {/* Test Result Message */}
+              {keyTestResult && (
+                <div
+                  className={`mt-2 p-2.5 rounded-xl border text-[11px] font-medium flex items-start gap-2 ${
+                    keyTestResult.valid
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
+                  {keyTestResult.valid ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p className="font-bold">{keyTestResult.valid ? "Succès !" : "Erreur de validation :"}</p>
+                    <p className="mt-0.5 leading-relaxed">{keyTestResult.message || keyTestResult.error}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Serveur SMTP Host</label>
+              <label className="font-bold text-slate-700 block mb-1">Serveur SMTP Host</label>
               <input
                 type="text"
                 value={smtpHost}
                 onChange={(e) => setSmtpHost(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
-            <div className="pt-2 border-t border-slate-100 space-y-3">
-              <div>
-                <label className="font-semibold text-slate-700 flex items-center gap-1 mb-1">
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>WhatsApp Business API (Futur)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Token WhatsApp Business..."
-                  value={whatsAppToken}
-                  onChange={(e) => setWhatsAppToken(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 flex items-center gap-1 mb-1">
-                  <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Téléphonie VoIP PBX (Futur)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://pbx.prospectmada.mg/api"
-                  value={voipEndpoint}
-                  onChange={(e) => setVoipEndpoint(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Compte SMTP User</label>
+              <input
+                type="text"
+                placeholder="votre.email@domaine.mg"
+                value={smtpUser}
+                onChange={(e) => setSmtpUser(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow-xs"
+              disabled={savingSettings}
+              className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Enregistrer la Configuration
+              {savingSettings ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Enregistrement...</span>
+                </>
+              ) : (
+                <span>Enregistrer la Configuration</span>
+              )}
             </button>
           </form>
         </div>
       </div>
 
-      {/* Audit Log Table */}
-      <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-card">
-        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Journal des Connexions & Actions de Sécurité</span>
+      {/* Security and Audit Logs Section */}
+      <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-3">
+        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-brand-600" />
+          <span>Journal d'Audit & Sécurité</span>
         </h3>
-
-        <div className="space-y-2">
-          {safeAuditLogs.slice(0, 5).map((log) => (
-            <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
-              <div>
-                <span className="font-bold text-slate-900">{log.action}</span>
-                <span className="text-slate-500 ml-2">{log.details}</span>
+        <div className="divide-y divide-slate-100 text-xs">
+          {safeAuditLogs.length === 0 ? (
+            <p className="py-4 text-slate-400 text-xs">Aucune activité récente enregistrée.</p>
+          ) : (
+            safeAuditLogs.map((log) => (
+              <div key={log.id} className="py-2.5 flex items-center justify-between">
+                <span className="font-semibold text-slate-800">{log.action}</span>
+                <span className="text-slate-400 text-[11px]">{new Date(log.createdAt).toLocaleString("fr-FR")}</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">
-                {new Date(log.createdAt).toLocaleString("fr-FR")}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
-      {/* Add User Modal with Backdrop Click Close */}
+      {/* Add User Modal */}
       {showAddUserModal && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50"
           onClick={() => setShowAddUserModal(false)}
         >
           <div
-            className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-modal"
+            className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-modal space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-slate-900 mb-4">Créer un Compte Utilisateur</h3>
-
+            <h3 className="text-base font-bold text-slate-900">Créer un Nouveau Collaborateur</h3>
             <form onSubmit={handleAddUser} className="space-y-3 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">Nom complet</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Raveloson Jean"
+                  placeholder="Rakoto Jean"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
                 />
               </div>
-
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">Adresse Email</label>
                 <input
                   type="email"
                   required
-                  placeholder="raveloson@prospectmada.mg"
+                  placeholder="rakoto@prospectmada.mg"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
                 />
               </div>
-
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Rôle d'Accès</label>
+                <label className="font-semibold text-slate-700 block mb-1">Rôle dans le CRM</label>
                 <select
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
                 >
-                  <option value="COMMERCIAL">Commercial</option>
-                  <option value="ADMIN">Admin (Chef Ventes)</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="COMMERCIAL">Commercial (Portefeuille exclusif)</option>
+                  <option value="ADMIN">Admin (Supervision équipe)</option>
+                  <option value="SUPER_ADMIN">Super Admin (Accès Total)</option>
                 </select>
               </div>
-
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Mot de Passe Initial</label>
+                <label className="font-semibold text-slate-700 block mb-1">Mot de passe temporaire</label>
                 <input
-                  type="text"
+                  type="password"
                   required
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
@@ -344,20 +479,20 @@ export default function ParametresPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="submit"
-                  disabled={submittingUser}
-                  className="flex-1 py-2 bg-brand-600 text-white rounded-xl font-bold shadow-xs"
-                >
-                  {submittingUser ? "Création..." : "Créer le Compte"}
-                </button>
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddUserModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold"
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold"
                 >
                   Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingUser}
+                  className="px-4 py-2 bg-brand-600 text-white rounded-xl font-bold shadow-xs"
+                >
+                  {submittingUser ? "Création..." : "Enregistrer"}
                 </button>
               </div>
             </form>
