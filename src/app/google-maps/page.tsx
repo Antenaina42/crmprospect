@@ -18,6 +18,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Filter,
+  GraduationCap,
+  School,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -34,7 +36,110 @@ const MADAGASCAR_CITIES = [
   { name: "Taolagnaro", region: "Anosy", count: "120+ entreprises" },
 ];
 
+const MADAGASCAR_DISTRICTS: Record<string, string[]> = {
+  Antananarivo: [
+    "Toutes les communes / zones",
+    "Andoharanofotsy",
+    "Tanjombato",
+    "Ankadimbahoaka",
+    "Ankorondrano",
+    "Analakely",
+    "Mahamasina",
+    "Itaosy",
+    "Ivato",
+    "Talatamaty",
+    "Ambohimanarina",
+    "Sabotsy Namehana",
+    "Alasora",
+    "Ilafy",
+    "Analamahitsy",
+    "Ampasampito",
+    "Ambohibao",
+    "Anosivavaka",
+    "Ambatobe",
+    "Isoraka",
+    "Antanimena",
+    "67Ha",
+    "Behoririka",
+  ],
+  Toamasina: [
+    "Toutes les communes / zones",
+    "Tamatave Centre",
+    "Bazar Be",
+    "Bazar Kely",
+    "Salazamay",
+    "Mangarano",
+    "Tanamakoa",
+    "Ankirihiry",
+    "Port Fluvial",
+  ],
+  Antsirabe: [
+    "Toutes les communes / zones",
+    "Antsirabe Centre",
+    "Vatofotsy",
+    "Mahazoarivo",
+    "Ivohitra",
+    "Ambalavato",
+    "Manandona",
+  ],
+  Mahajanga: [
+    "Toutes les communes / zones",
+    "Majunga Be",
+    "Tsaramandroso",
+    "Amborovy",
+    "Mahabibo",
+    "Marovato",
+    "Abattoir",
+  ],
+  Fianarantsoa: [
+    "Toutes les communes / zones",
+    "Fianar Centre",
+    "Ampitakely",
+    "Tsianolondroa",
+    "Isaha",
+    "Talatamaty",
+  ],
+  Antsiranana: [
+    "Toutes les communes / zones",
+    "Diego Ville",
+    "Scama",
+    "Bazarikely",
+    "Grand Pavois",
+    "Tanambao",
+  ],
+  Toliara: [
+    "Toutes les communes / zones",
+    "Tuléar Ville",
+    "Sanfily",
+    "Betania",
+    "Tsimenatse",
+    "Mahavatse",
+  ],
+  "Nosy Be": [
+    "Toutes les communes / zones",
+    "Hell-Ville",
+    "Dzamandzar",
+    "Ambatoloaka",
+    "Ambatozavavy",
+    "Andilana",
+  ],
+  Sambava: [
+    "Toutes les communes / zones",
+    "Sambava Centre",
+    "Antaimby",
+    "Ambodisatrana",
+  ],
+  Taolagnaro: [
+    "Toutes les communes / zones",
+    "Fort-Dauphin Centre",
+    "Bazarikely",
+    "Ampasimasay",
+  ],
+};
+
 const BUSINESS_CATEGORIES = [
+  { name: "Écoles & Établissements Scolaires", code: "SCHOOL", icon: "🏫" },
+  { name: "Centres de formation & Universités", code: "EDUCATION", icon: "🎓" },
   { name: "Entreprises BTP", code: "BTP", icon: "🏗️" },
   { name: "Agences de voyage", code: "TRAVEL", icon: "✈️" },
   { name: "Vente de véhicules", code: "AUTO_DEALER", icon: "🚗" },
@@ -42,19 +147,19 @@ const BUSINESS_CATEGORIES = [
   { name: "Hôtels", code: "HOTEL", icon: "🏨" },
   { name: "Restaurants", code: "RESTAURANT", icon: "🍽️" },
   { name: "Pharmacies", code: "PHARMACY", icon: "💊" },
-  { name: "Cliniques", code: "CLINIC", icon: "🏥" },
+  { name: "Cliniques & Cabinets médicaux", code: "CLINIC", icon: "🏥" },
   { name: "Avocats & Juristes", code: "LAWYER", icon: "⚖️" },
   { name: "Banques & Microfinance", code: "BANK", icon: "🏦" },
   { name: "Sociétés informatiques", code: "IT", icon: "💻" },
   { name: "Immobilières", code: "REAL_ESTATE", icon: "🏢" },
   { name: "Supermarchés", code: "SUPERMARKET", icon: "🛒" },
   { name: "Transporteurs & Transitaires", code: "LOGISTICS", icon: "🚚" },
-  { name: "Centres de formation & Écoles", code: "EDUCATION", icon: "🎓" },
 ];
 
 export default function GoogleMapsPage() {
   const [selectedCity, setSelectedCity] = useState("Antananarivo");
-  const [selectedCategory, setSelectedCategory] = useState("Entreprises BTP");
+  const [selectedDistrict, setSelectedDistrict] = useState("Toutes les communes / zones");
+  const [selectedCategory, setSelectedCategory] = useState("Écoles & Établissements Scolaires");
   const [customKeyword, setCustomKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -63,6 +168,9 @@ export default function GoogleMapsPage() {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [existingProspects, setExistingProspects] = useState<any[]>([]);
   const [detailModalPlace, setDetailModalPlace] = useState<any | null>(null);
+
+  // Available districts for the current city
+  const availableDistricts = MADAGASCAR_DISTRICTS[selectedCity] || ["Toutes les communes / zones"];
 
   // Fetch existing prospects to prevent selecting duplicate contacts
   const fetchExistingProspects = async () => {
@@ -79,6 +187,11 @@ export default function GoogleMapsPage() {
   useEffect(() => {
     fetchExistingProspects();
   }, []);
+
+  // Reset district when city changes
+  useEffect(() => {
+    setSelectedDistrict("Toutes les communes / zones");
+  }, [selectedCity]);
 
   // Check if place is already imported in CRM
   const isAlreadyImported = (place: any) => {
@@ -99,6 +212,7 @@ export default function GoogleMapsPage() {
     try {
       const queryParams = new URLSearchParams({
         city: selectedCity,
+        district: selectedDistrict,
         category: selectedCategory,
         keyword: customKeyword,
       });
@@ -109,7 +223,7 @@ export default function GoogleMapsPage() {
       const results = Array.isArray(data?.results) ? data.results : [];
       setPlaces(results);
 
-      // Pre-select non-duplicate places
+      // Pre-select fresh non-duplicate places
       const freshPlaceIds = results
         .filter((p: any) => !isAlreadyImported(p))
         .map((p: any) => p.googlePlaceId);
@@ -124,7 +238,7 @@ export default function GoogleMapsPage() {
 
   useEffect(() => {
     handleSearch();
-  }, [selectedCity, selectedCategory]);
+  }, [selectedCity, selectedDistrict, selectedCategory]);
 
   const toggleSelectPlace = (id: string, place: any) => {
     if (isAlreadyImported(place)) return; // Prevent selecting duplicates
@@ -147,314 +261,398 @@ export default function GoogleMapsPage() {
     if (selectedPlaces.length === 0) return;
     setImporting(true);
 
-    try {
-      const placesToImport = places
-        .filter((p) => selectedPlaces.includes(p.googlePlaceId) && !isAlreadyImported(p))
-        .map((p) => ({
-          ...p,
-          status: "Nouveau",
-          priority: "Moyenne",
-        }));
+    const placesToImport = places.filter((p) => selectedPlaces.includes(p.googlePlaceId));
 
+    try {
       const res = await fetch("/api/prospects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(placesToImport),
       });
 
-      const data = await res.json();
+      const result = await res.json();
+
       if (res.ok) {
-        setImportSuccess(`${data.count || placesToImport.length} prospect(s) importé(s) avec succès dans votre CRM !`);
+        setImportSuccess(`${result.count || placesToImport.length} nouveaux prospects ont été importés dans votre CRM avec succès !`);
         setSelectedPlaces([]);
         fetchExistingProspects();
       }
     } catch (e) {
-      console.error(e);
+      console.error("Import error:", e);
     } finally {
       setImporting(false);
     }
   };
 
+  const freshAvailableCount = places.filter((p) => !isAlreadyImported(p)).length;
+
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="p-6 bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 rounded-2xl text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Top Banner Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl text-white shadow-lg">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-300 border border-brand-400/30">
-              API Google Places Officielle
+              Module d'Extraction B2B (100 Résultats / Recherche)
             </span>
-            <span className="text-xs text-slate-300">Prospection B2B Madagascar</span>
+            <span className="text-xs text-slate-300 font-medium">Madagascar</span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">Recherche d'Entreprises par Google Maps</h2>
+          <h2 className="text-xl font-bold tracking-tight">Prospection Google Places Madagascar</h2>
           <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-            Ciblez et importez directement les entreprises par ville et par catégorie. Les contacts déjà enregistrés sont automatiquement protégés et verrouillés.
+            Recherchez et importez jusqu'à <strong>100 établissements</strong> par secteur et par commune (Écoles, BTP, Hôtels, etc.) avec coordonnées vérifiées.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <span className="text-xs text-slate-400 block">Prospects en base CRM</span>
-            <span className="text-lg font-bold text-amber-300">{existingProspects.length} enregistrés</span>
-          </div>
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-xs font-semibold text-white flex items-center gap-2 backdrop-blur-md transition-all active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Actualiser</span>
+          </button>
+
+          <button
+            onClick={handleImportSelected}
+            disabled={selectedPlaces.length === 0 || importing}
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/30 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            <span>{importing ? "Importation..." : `Importer (${selectedPlaces.length})`}</span>
+          </button>
         </div>
       </div>
 
-      {/* Control Panel: City & Category Selectors */}
+      {importSuccess && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{importSuccess}</span>
+          </div>
+          <button
+            onClick={() => setImportSuccess(null)}
+            className="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline"
+          >
+            Fermer
+          </button>
+        </div>
+      )}
+
+      {/* Advanced Filter Bar with City & Communes */}
       <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-card space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Main City Selector */}
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5">
-              1. Sélectionner la Ville :
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-brand-600" />
+              <span>1. Ville Principale</span>
             </label>
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {MADAGASCAR_CITIES.map((c) => (
                 <option key={c.name} value={c.name}>
-                  📍 {c.name} ({c.region})
+                  {c.name} ({c.region})
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Sub-District / Commune Selector (e.g. Andoharanofotsy, Tanjombato, etc.) */}
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5">
-              2. Sélectionner le Secteur :
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-indigo-600" />
+              <span>2. Commune / Quartier</span>
+            </label>
+            <select
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-indigo-50/50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {availableDistricts.map((d) => (
+                <option key={d} value={d}>
+                  {d === "Toutes les communes / zones" ? `Toutes les zones de ${selectedCity}` : `📍 ${d}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Business Category */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-brand-600" />
+              <span>3. Secteur d'Activité</span>
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {BUSINESS_CATEGORIES.map((cat) => (
-                <option key={cat.code} value={cat.name}>
+                <option key={cat.name} value={cat.name}>
                   {cat.icon} {cat.name}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Custom Keyword */}
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5">
-              3. Mot-clé Spécifique (Optionnel) :
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <span>4. Mot-clé Spécifique (Optionnel)</span>
             </label>
-            <div className="relative">
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Ex: Akorondrano, Analakely, BTP..."
+                placeholder="Ex: Lycée privé, Ecole bilingue..."
                 value={customKeyword}
                 onChange={(e) => setCustomKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               <button
+                type="button"
                 onClick={handleSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+                className="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
               >
-                <Search className="w-3.5 h-3.5" />
+                Lancer
               </button>
             </div>
           </div>
         </div>
+
+        {/* Quick Activity Badges */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
+          <span className="text-[11px] font-bold text-slate-400 shrink-0">Secteurs rapides :</span>
+          {BUSINESS_CATEGORIES.slice(0, 7).map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                selectedCategory === cat.name
+                  ? "bg-brand-600 text-white shadow-xs"
+                  : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <span>{cat.icon}</span>
+              <span>{cat.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {importSuccess && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs font-bold flex items-center justify-between shadow-card">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{importSuccess}</span>
-          </div>
-          <a
-            href="/prospects"
-            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+      {/* Results Header with Select All / Actions */}
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSelectAll}
+            className="text-xs font-bold text-brand-600 hover:underline flex items-center gap-1.5"
           >
-            Voir les prospects ➔
-          </a>
+            <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPlaces.length > 0 && selectedPlaces.length === freshAvailableCount ? "bg-brand-600 border-brand-600 text-white" : "border-slate-300 bg-white"}`}>
+              {selectedPlaces.length > 0 && <Check className="w-3 h-3" />}
+            </div>
+            <span>
+              {selectedPlaces.length === freshAvailableCount
+                ? "Tout désélectionner"
+                : `Tout sélectionner (${freshAvailableCount} nouveaux)`}
+            </span>
+          </button>
+
+          <span className="text-xs font-semibold text-slate-400">
+            • {places.length} résultats générés pour {selectedDistrict !== "Toutes les communes / zones" ? `${selectedDistrict}, ${selectedCity}` : selectedCity}
+          </span>
+        </div>
+
+        <button
+          onClick={handleImportSelected}
+          disabled={selectedPlaces.length === 0 || importing}
+          className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" />
+          <span>Importer la sélection ({selectedPlaces.length})</span>
+        </button>
+      </div>
+
+      {/* Results Grid (Up to 100 results) */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20 bg-white rounded-2xl border border-slate-200/80 shadow-card">
+          <div className="flex flex-col items-center gap-3">
+            <RefreshCw className="w-8 h-8 text-brand-600 animate-spin" />
+            <p className="text-xs text-slate-500 font-medium">
+              Extraction des 100 établissements pour {selectedCity}...
+            </p>
+          </div>
+        </div>
+      ) : places.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-card">
+          <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm font-bold text-slate-800">Aucun établissement trouvé</p>
+          <p className="text-xs text-slate-500">Modifiez vos critères de recherche ou sélectionnez une autre commune.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {places.map((place) => {
+            const isSelected = selectedPlaces.includes(place.googlePlaceId);
+            const isDuplicate = isAlreadyImported(place);
+
+            return (
+              <motion.div
+                key={place.googlePlaceId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-4.5 rounded-2xl border transition-all relative flex flex-col justify-between ${
+                  isDuplicate
+                    ? "bg-slate-50 border-slate-200 opacity-75"
+                    : isSelected
+                    ? "bg-indigo-50/40 border-brand-500 shadow-sm"
+                    : "bg-white border-slate-200/80 hover:border-slate-300 shadow-xs"
+                }`}
+              >
+                <div>
+                  {/* Top Card Header */}
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                          {place.category}
+                        </span>
+
+                        {isDuplicate && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            Déjà dans votre base CRM
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="font-bold text-slate-900 text-sm leading-snug">
+                        {place.name}
+                      </h3>
+                    </div>
+
+                    {/* Checkbox */}
+                    <button
+                      type="button"
+                      disabled={isDuplicate}
+                      onClick={() => toggleSelectPlace(place.googlePlaceId, place)}
+                      className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
+                        isDuplicate
+                          ? "bg-slate-200 border-slate-300 cursor-not-allowed text-slate-400"
+                          : isSelected
+                          ? "bg-brand-600 border-brand-600 text-white"
+                          : "border-slate-300 hover:border-brand-500 bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  {/* Place Information Details */}
+                  <div className="space-y-1.5 text-xs text-slate-600 my-3">
+                    <p className="flex items-center gap-2 font-semibold text-slate-900">
+                      <Phone className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                      <span>{place.phone}</span>
+                    </p>
+
+                    <p className="flex items-start gap-2 text-slate-500">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                      <span className="leading-tight">{place.address}</span>
+                    </p>
+
+                    {place.decisionMaker && (
+                      <p className="text-[11px] text-slate-500 font-medium pt-0.5">
+                        👤 Contact : <strong className="text-slate-800">{place.decisionMaker}</strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Footer Actions */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-1 text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded">
+                    <Star className="w-3 h-3 fill-amber-500 stroke-none" />
+                    <span>{place.rating} ({place.userRatingsTotal} avis)</span>
+                  </div>
+
+                  <button
+                    onClick={() => setDetailModalPlace(place)}
+                    className="text-brand-600 hover:text-brand-700 font-bold hover:underline"
+                  >
+                    Aperçu & Détails
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
-      {/* Results Section */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-card overflow-hidden">
-        {/* Table Toolbar */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleSelectAll}
-              className="text-xs font-bold text-slate-700 hover:text-brand-600 flex items-center gap-1.5"
-            >
-              <div
-                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                  selectedPlaces.length > 0 ? "bg-brand-600 border-brand-600 text-white" : "border-slate-300 bg-white"
-                }`}
-              >
-                {selectedPlaces.length > 0 && <Check className="w-3 h-3 stroke-[3]" />}
-              </div>
-              <span>Tout sélectionner (Nouveaux uniquement)</span>
-            </button>
-
-            <span className="text-xs text-slate-400 font-medium">
-              | {places.length} entreprise(s) trouvée(s)
-            </span>
-          </div>
-
-          <button
-            onClick={handleImportSelected}
-            disabled={selectedPlaces.length === 0 || importing}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-40"
-          >
-            <Download className="w-4 h-4" />
-            <span>
-              {importing ? "Importation..." : `Importer les ${selectedPlaces.length} prospects sélectionnés`}
-            </span>
-          </button>
-        </div>
-
-        {/* Results List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <RefreshCw className="w-6 h-6 text-brand-600 animate-spin" />
-          </div>
-        ) : places.length === 0 ? (
-          <div className="text-center py-16 p-6">
-            <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-bold text-slate-800">Aucune entreprise trouvée</p>
-            <p className="text-xs text-slate-500">Essayez une autre catégorie ou une autre ville de Madagascar.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {places.map((place) => {
-              const alreadyInDb = isAlreadyImported(place);
-              const isSelected = selectedPlaces.includes(place.googlePlaceId);
-
-              return (
-                <div
-                  key={place.googlePlaceId}
-                  className={`p-4 transition-colors flex items-start gap-4 ${
-                    alreadyInDb ? "bg-slate-50/70 opacity-80" : isSelected ? "bg-brand-50/30" : "hover:bg-slate-50/50"
-                  }`}
-                >
-                  {/* Selection Checkbox */}
-                  <button
-                    onClick={() => toggleSelectPlace(place.googlePlaceId, place)}
-                    disabled={alreadyInDb}
-                    className={`mt-1 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                      alreadyInDb
-                        ? "bg-slate-200 border-slate-300 cursor-not-allowed"
-                        : isSelected
-                        ? "bg-brand-600 border-brand-600 text-white"
-                        : "border-slate-300 bg-white hover:border-brand-500"
-                    }`}
-                  >
-                    {alreadyInDb ? (
-                      <Check className="w-3 h-3 text-slate-500" />
-                    ) : (
-                      isSelected && <Check className="w-3 h-3 stroke-[3]" />
-                    )}
-                  </button>
-
-                  {/* Main Details */}
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-bold text-slate-900">{place.name}</h4>
-
-                      {alreadyInDb ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-amber-600" />
-                          <span>Déjà dans votre base CRM (Non sélectionnable)</span>
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Nouveau Prospect
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap">
-                      <span className="flex items-center gap-1 font-semibold text-slate-900">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                        {place.phone}
-                      </span>
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        {place.address}
-                      </span>
-                      {place.rating && (
-                        <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-bold">
-                          <Star className="w-3 h-3 fill-amber-500 stroke-none" />
-                          {place.rating} / 5.0 ({place.userRatingsTotal} avis)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <button
-                    onClick={() => setDetailModalPlace(place)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold shrink-0"
-                  >
-                    Aperçu
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Detail Preview Popup Modal with Click-Outside Backdrop Close */}
+      {/* Place Preview Modal */}
       {detailModalPlace && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50"
           onClick={() => setDetailModalPlace(null)}
         >
-          <div
-            className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-modal space-y-4"
+          <motion.div
             onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-6 max-w-lg w-full border border-slate-200 shadow-modal space-y-4"
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
                   {detailModalPlace.category}
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">{detailModalPlace.name}</h3>
+                <h3 className="text-lg font-bold text-slate-900 mt-1">{detailModalPlace.name}</h3>
+                <p className="text-xs text-slate-500">{detailModalPlace.address}</p>
               </div>
               <button
                 onClick={() => setDetailModalPlace(null)}
-                className="p-1 text-slate-400 hover:text-slate-900 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 font-bold text-lg"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-700 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-              <p><strong>Téléphone :</strong> {detailModalPlace.phone}</p>
-              <p><strong>Adresse :</strong> {detailModalPlace.address}</p>
-              <p><strong>Ville :</strong> {detailModalPlace.city}</p>
+            <div className="p-4 bg-slate-50 rounded-xl space-y-2 text-xs">
+              <p>📞 <strong>Téléphone :</strong> {detailModalPlace.phone}</p>
+              {detailModalPlace.phoneSecondary && <p>📞 <strong>Ligne fixe :</strong> {detailModalPlace.phoneSecondary}</p>}
+              {detailModalPlace.email && <p>✉️ <strong>Email :</strong> {detailModalPlace.email}</p>}
               {detailModalPlace.website && (
-                <p>
-                  <strong>Site Web :</strong>{" "}
-                  <a href={detailModalPlace.website} target="_blank" className="text-brand-600 hover:underline">
+                <p className="flex items-center gap-1">
+                  🌐 <strong>Site Web :</strong>{" "}
+                  <a href={detailModalPlace.website} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
                     {detailModalPlace.website}
                   </a>
                 </p>
               )}
-              {isAlreadyImported(detailModalPlace) && (
-                <p className="text-amber-700 font-bold bg-amber-50 p-2 rounded border border-amber-200 mt-2">
-                  ⚠️ Ce prospect existe déjà dans votre base de données CRM.
-                </p>
-              )}
+              {detailModalPlace.decisionMaker && <p>👤 <strong>Responsable :</strong> {detailModalPlace.decisionMaker}</p>}
             </div>
 
-            <button
-              onClick={() => setDetailModalPlace(null)}
-              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold"
-            >
-              Fermer l'aperçu
-            </button>
-          </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setDetailModalPlace(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold"
+              >
+                Fermer
+              </button>
+              {!isAlreadyImported(detailModalPlace) && (
+                <button
+                  onClick={() => {
+                    toggleSelectPlace(detailModalPlace.googlePlaceId, detailModalPlace);
+                    setDetailModalPlace(null);
+                  }}
+                  className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold shadow-xs"
+                >
+                  {selectedPlaces.includes(detailModalPlace.googlePlaceId) ? "Retirer de la sélection" : "Ajouter à la sélection"}
+                </button>
+              )}
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
