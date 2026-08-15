@@ -9,57 +9,108 @@ const MADAGASCAR_CITIES_COORDS: Record<string, { lat: number; lng: number; regio
   Fianarantsoa: { lat: -21.4536, lng: 47.0857, region: "Haute Matsiatra" },
   Antsiranana: { lat: -12.2787, lng: 49.2917, region: "Diana" },
   Toliara: { lat: -23.3516, lng: 43.6675, region: "Atsimo-Andrefana" },
+  "Nosy Be": { lat: -13.3167, lng: 48.2667, region: "Diana" },
+  Sambava: { lat: -14.2667, lng: 50.1667, region: "SAVA" },
+  Taolagnaro: { lat: -25.0333, lng: 46.9833, region: "Anosy" },
 };
 
-function generateSimulatedPlaces(category: string, city: string, keyword?: string) {
+const SCHOOL_NAMES = [
+  "École Privée Saint-Michel",
+  "Collège & Lycée La Providence",
+  "Établissement Scolaire Les Petits Génies",
+  "École Primaire Bilingue Les Papillons",
+  "Lycée Privé Moderne L'Excellence",
+  "Institution Sainte-Anne",
+  "École Secondaire Les Lauriers",
+  "Complexe Scolaire L'Espérance",
+  "Collège Privé La Source",
+  "École Internationale de l'Océan Indien",
+  "Établissement Privé Les Hirondelles",
+  "Lycée Saint-Joseph",
+  "École Maternelle & Primaire Le Nid d'Or",
+  "Institution Chrétienne La Victoire",
+  "École Bilingue L'Étoile du Savoir",
+  "Collège Privé Les Palmiers",
+  "Établissement Scolaire La Renaissance",
+  "École Privée Sainte-Thérèse",
+  "Lycée Technique & Général Le Progrès",
+  "Académie Scolaire de Madagascar",
+  "École Fondamentale Les Bâtisseurs",
+  "Institution Scolaire L'Avenir",
+  "École Maternelle & Primaire Les Poussins",
+  "Complexe Éducatif Saint-Gabriel",
+  "Collège & Lycée Les Étoiles",
+];
+
+function generateSimulatedPlaces(category: string, city: string, district?: string, keyword?: string) {
   const coords = MADAGASCAR_CITIES_COORDS[city] || MADAGASCAR_CITIES_COORDS["Antananarivo"];
+  const isSchoolCategory = category.toLowerCase().includes("école") || category.toLowerCase().includes("ecole") || category.toLowerCase().includes("scolaire");
+
   const prefixes = ["Société", "Entreprise", "Groupe", "Agence", "Cabinet", "Établissement", "Comptoir"];
   const suffixes = ["Madagascar", "S.A.", "SARL", "Océan Indien", "Services", "Plus", "LevelUp"];
   const decisionMakers = [
-    "Rakotomalala Jean",
-    "Rasoanirina Marie",
-    "Andriamparany Hery",
-    "Ranaivomanana Patrick",
-    "Razafindrakoto Lova",
-    "Ramanantsoa Eric",
-    "Ravelomanantsoa Faniry",
-    "Randriamampionona Toky",
+    "Rakotomalala Jean (Directeur)",
+    "Rasoanirina Marie (Responsable Pédagogique)",
+    "Andriamparany Hery (Fondateur)",
+    "Ranaivomanana Patrick (Directeur Général)",
+    "Razafindrakoto Lova (Directrice)",
+    "Ramanantsoa Eric (Secrétaire Général)",
+    "Ravelomanantsoa Faniry (Proviseur)",
+    "Randriamampionona Toky (Directeur Administratif)",
+    "Ratsimba Armand (Responsable Établissement)",
+    "Andrianasolo Fara (Directrice des Études)",
   ];
 
   const results = [];
-  const count = 25;
+  const count = 100; // Generated 100 records per search
+
+  const districtLabel = district && district !== "Toutes les communes / zones" ? district : "";
+  const locationLabel = districtLabel ? `${districtLabel}, ${city}` : city;
 
   for (let i = 1; i <= count; i++) {
-    const prefix = prefixes[i % prefixes.length];
-    const suffix = suffixes[(i + 2) % suffixes.length];
-    const baseName = keyword ? `${keyword} ${suffix}` : `${prefix} ${category} ${city} ${suffix}`;
-    const jitterLat = coords.lat + (Math.random() - 0.5) * 0.05;
-    const jitterLng = coords.lng + (Math.random() - 0.5) * 0.05;
+    let baseName = "";
+
+    if (isSchoolCategory) {
+      const schoolTemplate = SCHOOL_NAMES[(i - 1) % SCHOOL_NAMES.length];
+      const schoolSuffix = i > SCHOOL_NAMES.length ? ` Annexe ${Math.ceil(i / SCHOOL_NAMES.length)}` : "";
+      baseName = keyword ? `${keyword} ${schoolSuffix}`.trim() : `${schoolTemplate} ${districtLabel || city}${schoolSuffix}`.trim();
+    } else {
+      const prefix = prefixes[i % prefixes.length];
+      const suffix = suffixes[(i + 2) % suffixes.length];
+      baseName = keyword ? `${keyword} ${suffix} N°${i}` : `${prefix} ${category} ${locationLabel} ${suffix} ${i}`;
+    }
+
+    const jitterLat = coords.lat + (Math.random() - 0.5) * 0.08;
+    const jitterLng = coords.lng + (Math.random() - 0.5) * 0.08;
     const telOperator = ["034", "032", "033", "038"][i % 4];
     const telRandom = Math.floor(1000000 + Math.random() * 9000000);
     const phone = `+261 ${telOperator.substring(1)} ${telRandom.toString().slice(0, 2)} ${telRandom.toString().slice(2, 5)} ${telRandom.toString().slice(5, 7)}`;
-    const sanitizedName = baseName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const sanitizedName = baseName.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 18);
+
+    const streetLetter = String.fromCharCode(65 + (i % 26));
+    const streetNumber = i * 4 + 1;
+    const address = `Lot ${streetLetter}${streetNumber} Bis, ${locationLabel}, Madagascar`;
 
     results.push({
-      googlePlaceId: `place_sim_${city.toLowerCase()}_${i}_${Date.now()}`,
+      googlePlaceId: `place_sim_${city.toLowerCase()}_${(districtLabel || "all").toLowerCase().replace(/[^a-z]/g, "")}_${i}_${Date.now()}`,
       name: baseName,
-      category,
+      category: isSchoolCategory ? "Écoles & Établissements Scolaires" : category,
       phone,
       phoneSecondary: `+261 20 22 ${Math.floor(10000 + Math.random() * 90000)}`,
-      email: `contact@${sanitizedName}.mg`,
-      address: `Lot ${String.fromCharCode(65 + (i % 26))}${i * 12} Bis, ${city}, Madagascar`,
-      city,
+      email: `contact@${sanitizedName || "etablissement"}.mg`,
+      address,
+      city: locationLabel,
       region: coords.region,
-      website: `https://www.${sanitizedName}.mg`,
+      website: `https://www.${sanitizedName || "etablissement"}.mg`,
       decisionMaker: decisionMakers[i % decisionMakers.length],
       facebook: `https://facebook.com/${sanitizedName}`,
       linkedin: `https://linkedin.com/company/${sanitizedName}`,
-      rating: parseFloat((3.8 + Math.random() * 1.2).toFixed(1)),
-      userRatingsTotal: Math.floor(5 + Math.random() * 45),
+      rating: parseFloat((3.9 + Math.random() * 1.1).toFixed(1)),
+      userRatingsTotal: Math.floor(8 + Math.random() * 85),
       lat: jitterLat,
       lng: jitterLng,
-      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(baseName + " " + city)}`,
-      openingHours: "Lun - Ven: 08:00 - 17:00",
+      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(baseName + " " + locationLabel)}`,
+      openingHours: "Lun - Ven: 07:30 - 17:00",
     });
   }
 
@@ -69,10 +120,13 @@ function generateSimulatedPlaces(category: string, city: string, keyword?: strin
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category") || "Entreprises BTP";
+    const category = searchParams.get("category") || "Écoles & Établissements Scolaires";
     const city = searchParams.get("city") || "Antananarivo";
+    const district = searchParams.get("district") || "";
     const keyword = searchParams.get("keyword") || "";
-    const radius = searchParams.get("radius") || "10";
+
+    const districtLabel = district && district !== "Toutes les communes / zones" ? district : "";
+    const locationQuery = districtLabel ? `${districtLabel} ${city}` : city;
 
     const settings = getSavedSettings();
     const googleApiKey = settings.googleApiKey || process.env.GOOGLE_PLACES_API_KEY;
@@ -80,7 +134,10 @@ export async function GET(req: Request) {
     // If official Google API key is configured, call official API
     if (googleApiKey && googleApiKey.trim() !== "") {
       try {
-        const queryText = keyword ? `${keyword} ${city} Madagascar` : `${category} ${city} Madagascar`;
+        const queryText = keyword
+          ? `${keyword} ${locationQuery} Madagascar`
+          : `${category} ${locationQuery} Madagascar`;
+
         const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryText)}&key=${googleApiKey.trim()}`;
 
         const res = await fetch(googleUrl);
@@ -89,12 +146,12 @@ export async function GET(req: Request) {
         if (data.status === "OK" && data.results && data.results.length > 0) {
           // Format place results
           const formatted = await Promise.all(
-            data.results.slice(0, 20).map(async (p: any) => {
+            data.results.map(async (p: any) => {
               let phone = "+261 34 00 000 00";
               let website = null;
               let openingHours = null;
 
-              // Optionally enrich with Place Details if place_id exists
+              // Enrich with Place Details if place_id exists
               if (p.place_id) {
                 try {
                   const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${p.place_id}&fields=name,formatted_phone_number,international_phone_number,website,opening_hours&key=${googleApiKey.trim()}`;
@@ -116,8 +173,8 @@ export async function GET(req: Request) {
                 googlePlaceId: p.place_id,
                 name: p.name,
                 category: category,
-                address: p.formatted_address || `${city}, Madagascar`,
-                city: city,
+                address: p.formatted_address || `${locationQuery}, Madagascar`,
+                city: locationQuery,
                 region: MADAGASCAR_CITIES_COORDS[city]?.region || "Madagascar",
                 rating: p.rating || 4.5,
                 userRatingsTotal: p.user_ratings_total || 10,
@@ -136,16 +193,14 @@ export async function GET(req: Request) {
             results: formatted,
             googleStatus: data.status,
           });
-        } else {
-          console.warn("Google Places API returned status:", data.status, data.error_message);
         }
       } catch (err) {
         console.warn("Official Google Places API failed, falling back to simulator:", err);
       }
     }
 
-    // Fallback/Simulated Google Places results for Madagascar
-    const simulated = generateSimulatedPlaces(category, city, keyword);
+    // Fallback/Simulated Google Places results for Madagascar (100 places batch)
+    const simulated = generateSimulatedPlaces(category, city, districtLabel, keyword);
     return NextResponse.json({
       source: "GOOGLE_PLACES_SIMULATION_MADAGASCAR",
       results: simulated,
