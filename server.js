@@ -42,19 +42,21 @@ const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = process.env.PORT || 3000;
-const app = next({ dev });
+const port = parseInt(process.env.PORT, 10) || 3000;
+const app = next({ dev, hostname: '0.0.0.0', port });
 const handle = app.getRequestHandler();
 
 app
   .prepare()
   .then(() => {
-    createServer((req, res) => {
+    const server = createServer((req, res) => {
       const parsedUrl = parse(req.url, true);
       handle(req, res, parsedUrl);
-    }).listen(port, (err) => {
+    });
+
+    server.listen(port, '0.0.0.0', (err) => {
       if (err) throw err;
-      console.log(`> Ready on port ${port}`);
+      console.log(`> Server ready and listening on http://0.0.0.0:${port}`);
     });
   })
   .catch((err) => {
