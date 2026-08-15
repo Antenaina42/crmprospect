@@ -27,7 +27,7 @@ function generateSimulatedPlaces(category: string, city: string, keyword?: strin
   ];
 
   const results = [];
-  const count = 12;
+  const count = 25;
 
   for (let i = 1; i <= count; i++) {
     const prefix = prefixes[i % prefixes.length];
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
         if (data.status === "OK" && data.results && data.results.length > 0) {
           // Format place results
           const formatted = await Promise.all(
-            data.results.slice(0, 15).map(async (p: any) => {
+            data.results.slice(0, 20).map(async (p: any) => {
               let phone = "+261 34 00 000 00";
               let website = null;
               let openingHours = null;
