@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSavedSettings } from "@/app/api/settings/route";
+import { getSavedSettings } from "@/lib/settings";
 
 const MADAGASCAR_CITIES_COORDS: Record<string, { lat: number; lng: number; region: string }> = {
   Antananarivo: { lat: -18.8792, lng: 47.5079, region: "Analamanga" },
