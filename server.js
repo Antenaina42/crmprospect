@@ -1,6 +1,14 @@
 const path = require('path');
 const fs = require('fs');
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception in server.js:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection in server.js:', reason);
+});
+
 // Multi-path dotenv loader for Hostinger entry point
 const possibleEnvPaths = [
   path.resolve(process.cwd(), '.env.production'),
@@ -42,12 +50,22 @@ const port = process.env.PORT || 3000;
 const app = next({ dev, port });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
-  createServer((req, res) => {
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
-  }).listen(port, (err) => {
-    if (err) throw err;
-    console.log(`> Ready on port ${port}`);
+app
+  .prepare()
+  .then(() => {
+    createServer((req, res) => {
+      const parsedUrl = parse(req.url, true);
+      handle(req, res, parsedUrl);
+    }).listen(port, (err) => {
+      if (err) throw err;
+      console.log(`> Ready on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Error starting Next.js application in server.js:', err);
+    // Create minimal fallback server if Next.js build is rebuilding
+    createServer((req, res) => {
+      res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<h1>CRM Prospect M-It LevelUp - Initialisation en cours...</h1><p>Veuillez rafraîchir dans quelques secondes.</p>');
+    }).listen(port);
   });
-});
