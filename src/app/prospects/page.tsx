@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Users,
   Search,
@@ -19,6 +20,8 @@ import {
   Flame,
   Star,
   CheckCircle2,
+  ShieldCheck,
+  User,
 } from "lucide-react";
 import { ProspectDetailModal } from "@/components/prospects/ProspectDetailModal";
 
@@ -46,8 +49,14 @@ const PRIORITY_BADGE_COLORS: Record<string, string> = {
 function ProspectsContent() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
+  const { data: session } = useSession();
+
+  const userRole = (session?.user as any)?.role || "COMMERCIAL";
+  const isSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+  const currentUserName = session?.user?.name || "Commercial";
 
   const [prospects, setProspects] = useState<any[]>([]);
+  const [commercials, setCommercials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProspect, setSelectedProspect] = useState<any | null>(null);
 
@@ -56,6 +65,21 @@ function ProspectsContent() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [city, setCity] = useState("");
+  const [commercialId, setCommercialId] = useState("");
+
+  // Fetch list of commercials for Super Admin filter
+  useEffect(() => {
+    if (isSuperAdmin) {
+      fetch("/api/users")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && Array.isArray(data.users)) {
+            setCommercials(data.users);
+          }
+        })
+        .catch((e) => console.error(e));
+    }
+  }, [isSuperAdmin]);
 
   const fetchProspects = async () => {
     setLoading(true);
@@ -67,6 +91,10 @@ function ProspectsContent() {
         priority,
         city,
       });
+
+      if (isSuperAdmin && commercialId) {
+        queryParams.set("commercialId", commercialId);
+      }
 
       const res = await fetch(`/api/prospects?${queryParams}`);
       const data = await res.json();
@@ -81,7 +109,7 @@ function ProspectsContent() {
 
   useEffect(() => {
     fetchProspects();
-  }, [status, priority, city]);
+  }, [status, priority, city, commercialId]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,14 +124,26 @@ function ProspectsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white border border-slate-200/80 rounded-2xl shadow-card">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
-              Pipeline de Vente CRM
-            </span>
+            {isSuperAdmin ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-amber-600" />
+                <span>Super Admin : Vue Globale Équipe ({safeProspectsList.length} prospects)</span>
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200 flex items-center gap-1">
+                <User className="w-3 h-3 text-brand-600" />
+                <span>Mon Portefeuille : {currentUserName} ({safeProspectsList.length} prospects)</span>
+              </span>
+            )}
             <span className="text-xs text-slate-400 font-medium">Madagascar</span>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Gestion des Prospects B2B</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            {isSuperAdmin ? "Gestion de Tous les Prospects (Super Admin)" : "Mes Prospects Commerciaux"}
+          </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Suivi des qualifications, historique des appels, relances et opportunités d'affaires.
+            {isSuperAdmin
+              ? "Supervision complète de tous les prospects attribués aux différents commerciaux de l'agence."
+              : "Suivi de vos qualifications, historique d'appels et opportunités d'affaires exclusives."}
           </p>
         </div>
 
@@ -133,6 +173,22 @@ function ProspectsContent() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Super Admin filter by Commercial */}
+          {isSuperAdmin && (
+            <select
+              value={commercialId}
+              onChange={(e) => setCommercialId(e.target.value)}
+              className="px-3 py-2 bg-amber-50/60 border border-amber-200 rounded-xl text-xs font-bold text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="">Tous les Commerciaux</option>
+              {commercials.map((comm) => (
+                <option key={comm.id} value={comm.id}>
+                  Commercial : {comm.name}
+                </option>
+              ))}
+            </select>
+          )}
+
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -197,7 +253,11 @@ function ProspectsContent() {
           <div className="text-center py-16 p-6">
             <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
             <p className="text-sm font-bold text-slate-800">Aucun prospect trouvé</p>
-            <p className="text-xs text-slate-500">Essayez de modifier vos filtres ou effectuez un import Google Places.</p>
+            <p className="text-xs text-slate-500">
+              {isSuperAdmin
+                ? "Aucun prospect ne correspond à vos critères de recherche."
+                : "Vous n'avez pas encore de prospect attribué. Utilisez l'onglet Google Maps pour en ajouter."}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -261,7 +321,10 @@ function ProspectsContent() {
                     </td>
 
                     <td className="py-3.5 px-4 font-medium text-slate-600">
-                      {prospect.assignedTo?.name || "Non attribué"}
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-brand-500" />
+                        <span>{prospect.assignedTo?.name || "Non attribué"}</span>
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>

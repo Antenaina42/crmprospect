@@ -67,7 +67,7 @@ export default function GoogleMapsPage() {
   // Fetch existing prospects to prevent selecting duplicate contacts
   const fetchExistingProspects = async () => {
     try {
-      const res = await fetch("/api/prospects");
+      const res = await fetch("/api/prospects?forDuplicates=true");
       const data = await res.json();
       setExistingProspects(Array.isArray(data) ? data : []);
     } catch (e) {

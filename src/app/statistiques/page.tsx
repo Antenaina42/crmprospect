@@ -85,7 +85,7 @@ export default function StatistiquesPage() {
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} - Prospect Mada CRM`, 14, 26);
+    doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} - CRM Prospect M-It LevelUp`, 14, 26);
 
     const kpis = stats?.kpis || {};
     const tableData = [

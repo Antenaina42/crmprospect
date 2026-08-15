@@ -50,12 +50,12 @@ export function Sidebar() {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-900 text-base tracking-tight">Prospect Mada</span>
+              <span className="font-bold text-slate-900 text-sm tracking-tight">CRM Prospect</span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">
-                CRM
+                PRO
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">M-IT Level Up</p>
+            <p className="text-xs text-brand-600 font-bold">M-It LevelUp</p>
           </div>
         </div>
 

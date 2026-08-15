@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Prospect Mada CRM | Prospection Commerciale B2B Madagascar",
+  title: "CRM Prospect M-It LevelUp | Prospection Commerciale B2B Madagascar",
   description:
-    "Solution SaaS moderne de prospection commerciale et de gestion des prospects à Madagascar via l'API Google Places.",
+    "Solution SaaS moderne de prospection commerciale et de gestion des prospects à Madagascar via l'API Google Places - M-IT Level Up.",
 };
 
 export default function RootLayout({

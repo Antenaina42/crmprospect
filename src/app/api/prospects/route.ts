@@ -10,6 +10,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const userId = (session.user as any)?.id;
+    const userRole = (session.user as any)?.role || "COMMERCIAL";
+    const isSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
@@ -17,6 +21,25 @@ export async function GET(req: Request) {
     const city = searchParams.get("city") || "";
     const category = searchParams.get("category") || "";
     const isClient = searchParams.get("isClient") === "true";
+    const commercialId = searchParams.get("commercialId") || "";
+    const forDuplicates = searchParams.get("forDuplicates") === "true";
+
+    // Lightweight duplicate check for Google Maps (returns only identifiers)
+    if (forDuplicates) {
+      try {
+        const duplicates = await prisma.prospect.findMany({
+          select: {
+            id: true,
+            googlePlaceId: true,
+            name: true,
+            phone: true,
+          },
+        });
+        return NextResponse.json(duplicates);
+      } catch (e) {
+        return NextResponse.json([]);
+      }
+    }
 
     let prospects: any[] = [];
 
@@ -25,14 +48,38 @@ export async function GET(req: Request) {
         isClient,
       };
 
-      if (search) {
-        where.OR = [
-          { name: { contains: search } },
-          { phone: { contains: search } },
-          { email: { contains: search } },
-          { city: { contains: search } },
-          { decisionMaker: { contains: search } },
+      // PERMISSION FILTER:
+      // Super Admin sees ALL prospects (or filtered by selected commercialId)
+      // Commercials ONLY see their own assigned or created prospects
+      if (!isSuperAdmin) {
+        where.AND = [
+          {
+            OR: [
+              { assignedToId: userId },
+              { createdById: userId },
+            ],
+          },
         ];
+      } else if (commercialId) {
+        where.assignedToId = commercialId;
+      }
+
+      if (search) {
+        const searchCondition = {
+          OR: [
+            { name: { contains: search } },
+            { phone: { contains: search } },
+            { email: { contains: search } },
+            { city: { contains: search } },
+            { decisionMaker: { contains: search } },
+          ],
+        };
+
+        if (where.AND) {
+          where.AND.push(searchCondition);
+        } else {
+          where.OR = searchCondition.OR;
+        }
       }
 
       if (status) where.status = status;
@@ -71,13 +118,18 @@ export async function POST(req: Request) {
     }
 
     const userId = (session.user as any).id;
-    const body = await req.json();
+    const userRole = (session.user as any)?.role || "COMMERCIAL";
+    const isSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
 
+    const body = await req.json();
     const prospectsToImport = Array.isArray(body) ? body : [body];
     const importedResults = [];
 
     for (const item of prospectsToImport) {
       try {
+        // If super admin specified an assigned commercial, use it. Otherwise, assign to current user.
+        const assignedTarget = isSuperAdmin && item.assignedToId ? item.assignedToId : userId;
+
         const prospect = await prisma.prospect.create({
           data: {
             googlePlaceId: item.googlePlaceId || `custom_${Date.now()}_${Math.random()}`,
@@ -100,7 +152,7 @@ export async function POST(req: Request) {
             userRatingsTotal: item.userRatingsTotal ? parseInt(item.userRatingsTotal) : null,
             lat: item.lat ? parseFloat(item.lat) : null,
             lng: item.lng ? parseFloat(item.lng) : null,
-            assignedToId: item.assignedToId || userId,
+            assignedToId: assignedTarget,
             createdById: userId,
           },
         });
@@ -124,11 +176,27 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any)?.role || "COMMERCIAL";
+    const isSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+
     const body = await req.json();
     const { id, ...updateData } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID prospect requis" }, { status: 400 });
+    }
+
+    // Commercials can only modify their own prospects
+    if (!isSuperAdmin) {
+      const existing = await prisma.prospect.findUnique({
+        where: { id },
+        select: { assignedToId: true, createdById: true },
+      });
+
+      if (!existing || (existing.assignedToId !== userId && existing.createdById !== userId)) {
+        return NextResponse.json({ error: "Action non autorisée sur ce prospect" }, { status: 403 });
+      }
     }
 
     if (updateData.status === "Client" && !updateData.isClient) {

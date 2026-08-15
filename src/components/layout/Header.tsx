@@ -33,7 +33,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const paths = pathname.split("/").filter(Boolean);
-  const currentTitle = breadcrumbMap[paths[0]] || "Prospect Mada CRM";
+  const currentTitle = breadcrumbMap[paths[0]] || "CRM Prospect M-It LevelUp";
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +63,7 @@ export function Header() {
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 px-6 flex items-center justify-between">
       {/* Breadcrumbs & Title */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-slate-400">M-IT Level Up</span>
+        <span className="text-xs font-bold text-brand-600">M-It LevelUp</span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
         <h1 className="text-sm font-semibold text-slate-900">{currentTitle}</h1>
       </div>

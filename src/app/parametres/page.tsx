@@ -102,7 +102,7 @@ export default function ParametresPage() {
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
             Administration & Sécurité
           </span>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1">Paramètres du CRM Prospect Mada</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1">Paramètres du CRM Prospect M-It LevelUp</h2>
           <p className="text-xs text-slate-500">
             Gestion des utilisateurs, des clés API Google Places, SMTP, WhatsApp et règles de sécurité.
           </p>
