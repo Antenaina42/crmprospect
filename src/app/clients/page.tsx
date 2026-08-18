@@ -187,6 +187,29 @@ export default function ClientsPage() {
                         <span>Signé le {new Date(client.convertedAt).toLocaleDateString("fr-FR")}</span>
                       </p>
                     )}
+
+                    {/* Note Preview */}
+                    {client.notes ? (
+                      <div
+                        onClick={() => setSelectedClient(client)}
+                        className="mt-2 p-2.5 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70 rounded-xl text-[11px] text-amber-900 cursor-pointer transition-colors"
+                      >
+                        <p className="font-bold flex items-center gap-1 text-amber-800 text-[10px] uppercase tracking-wider mb-0.5">
+                          📝 Note Commerciale :
+                        </p>
+                        <p className="line-clamp-2 italic font-normal leading-tight text-slate-700">
+                          {client.notes}
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedClient(client)}
+                        className="mt-2 w-full py-1.5 px-2.5 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-xl text-[11px] text-slate-500 font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <span>+ Ajouter une note client</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -210,10 +233,10 @@ export default function ClientsPage() {
 
                   <button
                     onClick={() => setSelectedClient(client)}
-                    className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                    className="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Consulter la Fiche & Brief Client</span>
+                    <span>Fiche, Briefing & Notes Client</span>
                   </button>
                 </div>
               </div>
